@@ -824,6 +824,87 @@ main {
   cursor: default;
 }
 
+.deliveryFormatSelector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.formatCheck,
+.platformToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.formatCheck {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.formatCheck.selected,
+.deliveryPlatformCard.enabled {
+  border-color: rgba(216, 198, 255, 0.34);
+  background: rgba(216, 198, 255, 0.10);
+}
+
+.formatCheck input,
+.platformToggleRow input {
+  width: auto;
+  accent-color: #d9c8ff;
+}
+
+.formatCheck span {
+  font-weight: 700;
+}
+
+.formatCheck small {
+  grid-column: 2;
+  color: var(--muted);
+}
+
+.deliveryPlatformsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.deliveryPlatformCard {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 22px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.platformToggleRow {
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.platformToggleRow span {
+  flex: 1;
+  font-weight: 700;
+}
+
+.platformDetails {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.platformDetailGrid {
+  display: grid;
+  grid-template-columns: 1fr 0.72fr;
+  gap: 10px;
+}
+
 @media (max-width: 1180px) {
   .assetNodeBoard {
     grid-template-columns: 1fr;
@@ -842,7 +923,10 @@ main {
 
 @media (max-width: 760px) {
   .visualFrameNode .shotUploadGrid,
-  .productionStoryboardGrid {
+  .productionStoryboardGrid,
+  .deliveryFormatSelector,
+  .deliveryPlatformsGrid,
+  .platformDetailGrid {
     grid-template-columns: 1fr;
   }
 }

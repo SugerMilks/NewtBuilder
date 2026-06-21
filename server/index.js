@@ -3901,15 +3901,15 @@ async function generateFrameThumbnailCandidates({ episode, show, thumbnailBrief 
   await Promise.all([mkdir(thumbnailDir, { recursive: true }), mkdir(tempDir, { recursive: true })]);
 
   const duration = Number(sourceOutput.durationSeconds || (await probeDuration(sourcePath)) || 0);
-  const vertical = episode.format?.aspectRatio === "9:16";
-  const width = vertical ? 1080 : 1280;
-  const height = vertical ? 1920 : 720;
   const title = thumbnailTitleText({ episode, show, thumbnailBrief });
-  const variants = thumbnailVariants({ title, show });
+  const formats = thumbnailRequestedFormats({ thumbnailBrief, episode, show });
+  const variants = thumbnailVariants({ title, show, formats });
   const outputs = [];
 
   try {
     for (const variant of variants) {
+      const width = variant.width || 1280;
+      const height = variant.height || 720;
       const timestamp = thumbnailTimestamp(duration, variant.position);
       const textPath = path.join(tempDir, `${variant.id}.txt`);
       await writeFile(textPath, variant.text);
@@ -3937,6 +3937,7 @@ async function generateFrameThumbnailCandidates({ episode, show, thumbnailBrief 
         sourceOutputType: sourceOutput.type || "",
         timestampSeconds: roundSeconds(timestamp),
         prompt: variant.prompt,
+        aspectRatio: variant.aspectRatio || "",
         createdAt: new Date().toISOString()
       });
     }
@@ -3959,37 +3960,36 @@ async function generateAiThumbnailCandidates({ episode, show, thumbnailBrief = {
 
   const sourceOutput = latestVideoOutputForThumbnail(episode);
   const sourcePath = outputFilePath(sourceOutput);
-  const vertical = episode.format?.aspectRatio === "9:16";
-  const width = vertical ? 1080 : 1920;
-  const height = vertical ? 1920 : 1080;
   const title = thumbnailTitleText({ episode, show, thumbnailBrief });
-  const variants = thumbnailVariants({ title, show });
+  const formats = thumbnailRequestedFormats({ thumbnailBrief, episode, show });
+  const variants = thumbnailVariants({ title, show, formats });
   const outputs = [];
 
   try {
-    const referencePaths = [];
-    if (sourcePath) {
-      const duration = Number(sourceOutput.durationSeconds || (await probeDuration(sourcePath)) || 0);
-      const framePath = path.join(tempDir, "render-reference.jpg");
-      await extractThumbnailReferenceFrame({
-        sourcePath,
-        outputPath: framePath,
-        timestamp: thumbnailTimestamp(duration, thumbnailBriefStillPosition(thumbnailBrief.stillFrame)),
-        width,
-        height
-      });
-      referencePaths.push(framePath);
-    }
-
     const assetReferences = await thumbnailReferenceAssetPaths({ episode, tempDir });
-    referencePaths.push(...assetReferences);
-    if (!referencePaths.length) {
+    if (!sourcePath && !assetReferences.length) {
       throw new Error("Upload shot images or build a render before generating AI thumbnails.");
     }
 
-    const imageUrls = await Promise.all(referencePaths.slice(0, 5).map((filePath) => imageDataUri(filePath)));
+    const duration = sourcePath ? Number(sourceOutput.durationSeconds || (await probeDuration(sourcePath)) || 0) : 0;
     for (const variant of variants) {
-      const prompt = aiThumbnailPrompt({ episode, show, variant, title, vertical, thumbnailBrief });
+      const width = variant.width || 1920;
+      const height = variant.height || 1080;
+      const referencePaths = [];
+      if (sourcePath) {
+        const framePath = path.join(tempDir, `render-reference-${variant.id}.jpg`);
+        await extractThumbnailReferenceFrame({
+          sourcePath,
+          outputPath: framePath,
+          timestamp: thumbnailTimestamp(duration, thumbnailBriefStillPosition(thumbnailBrief.stillFrame)),
+          width,
+          height
+        });
+        referencePaths.push(framePath);
+      }
+      referencePaths.push(...assetReferences);
+      const imageUrls = await Promise.all(referencePaths.slice(0, 5).map((filePath) => imageDataUri(filePath)));
+      const prompt = aiThumbnailPrompt({ episode, show, variant, title, format: variant, thumbnailBrief });
       const result = await runFalGptImageThumbnail({
         imageUrls,
         prompt,
@@ -4014,6 +4014,7 @@ async function generateAiThumbnailCandidates({ episode, show, thumbnailBrief = {
         sourceOutputId: sourceOutput?.id || "",
         sourceOutputType: sourceOutput?.type || "",
         prompt,
+        aspectRatio: variant.aspectRatio || "",
         provider: "fal-gpt-image-2-edit",
         remoteUrl,
         createdAt: new Date().toISOString()
@@ -4735,6 +4736,7 @@ function fileSizeLabel(bytes = 0) {
 
 function youtubePackageMetadata({ episode, show, finalVideo, selectedThumbnail, packageName, videoFileName, thumbnailFileName }) {
   const youtube = episode.drafts?.youtube || {};
+  const delivery = episode.drafts?.delivery || {};
   const latestYoutubeUpload = (Array.isArray(episode.outputs) ? episode.outputs : []).find(
     (output) => output.type === "youtube_upload" && output.videoId
   );
@@ -4782,6 +4784,9 @@ function youtubePackageMetadata({ episode, show, finalVideo, selectedThumbnail, 
         pinnedComment: hydrateYouTubeLink(youtube.promotion?.pinnedComment || "", draftWatchUrl)
       }
     },
+    delivery: {
+      platforms: delivery.platforms && typeof delivery.platforms === "object" ? delivery.platforms : {}
+    },
     files: {
       video: videoFileName,
       thumbnail: thumbnailFileName,
@@ -4802,7 +4807,16 @@ function youtubePackageMetadata({ episode, show, finalVideo, selectedThumbnail, 
         communityPost: hydrateYouTubeLink(youtube.promotion?.communityPost || "", draftWatchUrl),
         pinnedComment: hydrateYouTubeLink(youtube.promotion?.pinnedComment || "", draftWatchUrl)
       },
-      social: []
+      social: Object.entries(delivery.platforms || {})
+        .filter(([, platform]) => platform?.enabled)
+        .map(([key, platform]) => ({
+          platform: key,
+          title: String(platform.title || "").trim(),
+          description: String(platform.description || "").trim(),
+          hashtags: String(platform.hashtags || "").trim(),
+          privacy: String(platform.privacy || "").trim(),
+          notes: String(platform.notes || "").trim()
+        }))
     }
   };
 }
@@ -5413,8 +5427,57 @@ function wrapThumbnailText(text, maxLineLength = 18, maxLines = 3) {
   return lines.join("\n") || "NEW EPISODE";
 }
 
-function thumbnailVariants({ title, show }) {
+const thumbnailFormatPresets = {
+  "16:9": {
+    id: "16x9",
+    label: "16:9 Landscape",
+    width: 1920,
+    height: 1080,
+    promptAspect: "16:9 landscape YouTube thumbnail"
+  },
+  "9:16": {
+    id: "9x16",
+    label: "9:16 Vertical",
+    width: 1080,
+    height: 1920,
+    promptAspect: "9:16 vertical story thumbnail"
+  },
+  "21:9": {
+    id: "21x9",
+    label: "21:9 Cinematic",
+    width: 2560,
+    height: 1080,
+    promptAspect: "21:9 cinematic banner thumbnail"
+  }
+};
+
+function thumbnailRequestedFormats({ thumbnailBrief = {}, episode = {}, show = {} }) {
+  const requested = Array.isArray(thumbnailBrief.formats) ? thumbnailBrief.formats : [];
+  const fallbackAspect = episode.format?.aspectRatio || show.shortFormat?.aspectRatio || "16:9";
+  const formats = requested
+    .map((aspect) => thumbnailFormatPresets[String(aspect || "")])
+    .filter(Boolean);
+  if (!formats.length) {
+    return [thumbnailFormatPresets[fallbackAspect] || thumbnailFormatPresets["16:9"]];
+  }
+  return [...new Map(formats.map((format) => [format.id, format])).values()].slice(0, 3);
+}
+
+function thumbnailVariants({ title, show, formats = [] }) {
   const style = show.creative?.thumbnailStyle || "bold character moment, clean text, strong expression";
+  if (formats.length) {
+    return formats.map((format, index) => ({
+      id: format.id,
+      label: `${format.label} Thumbnail`,
+      position: [0.24, 0.52, 0.78][index] || 0.52,
+      accent: ["#ffd22e", "#40c7ff", "#ff8a3d"][index] || "#ffd22e",
+      text: title,
+      prompt: `${style}. ${format.promptAspect} with readable title overlay.`,
+      width: format.width,
+      height: format.height,
+      aspectRatio: Object.keys(thumbnailFormatPresets).find((key) => thumbnailFormatPresets[key].id === format.id) || ""
+    }));
+  }
   return [
     {
       id: "hook",
@@ -5558,17 +5621,17 @@ async function prepareThumbnailReferenceImage({ sourcePath, outputPath }) {
   );
 }
 
-function aiThumbnailPrompt({ episode, show, variant, title, vertical, thumbnailBrief = {} }) {
+function aiThumbnailPrompt({ episode, show, variant, title, format, thumbnailBrief = {} }) {
   const planBeats = Array.isArray(episode.plan?.beats) ? episode.plan.beats : [];
   const hook = compactText(planBeats[0]?.text || episode.drafts?.youtube?.description || episode.scriptText || episode.title, 420);
   const characterNames = uniqueStrings((show.characters || []).map((character) => character.name).filter(Boolean)).join(", ");
   const visualStyle = show.creative?.visualStyle || "bright expressive 2D cartoon, polished animated short";
   const thumbnailStyle = show.creative?.thumbnailStyle || "bold character moment, clean text, strong expression";
-  const aspect = vertical ? "vertical 9:16 video thumbnail" : "wide 16:9 YouTube thumbnail";
+  const aspect = format?.promptAspect || "wide 16:9 YouTube thumbnail";
   const titleLine = title.replace(/\n/g, " ");
   const userInstruction =
     thumbnailBrief.prompt ||
-    `Create a ${vertical ? "9x16" : "16x9"} YouTube thumbnail that includes the selected still frame, a dynamic super, and the provided episode information.`;
+    `Create a ${aspect} that includes the selected still frame, a dynamic super, and the provided episode information.`;
   const providedInfo = thumbnailBrief.details || episode.drafts?.youtube?.description || "";
   return compactText(
     [
@@ -5631,11 +5694,15 @@ function sanitizeThumbnailBrief(brief = {}) {
   const stillFrame = ["opening", "middle", "ending"].includes(String(brief.stillFrame || "").toLowerCase())
     ? String(brief.stillFrame).toLowerCase()
     : "middle";
+  const formats = Array.isArray(brief.formats)
+    ? [...new Set(brief.formats.map((format) => String(format || "")).filter((format) => thumbnailFormatPresets[format]))].slice(0, 3)
+    : [];
   return {
     prompt: compactText(brief.prompt, 1000),
     superText: compactText(brief.superText, 140),
     details: compactText(brief.details, 1600),
-    stillFrame
+    stillFrame,
+    formats
   };
 }
 

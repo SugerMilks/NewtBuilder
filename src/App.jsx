@@ -245,6 +245,23 @@ const formatOptions = [
   }
 ];
 
+const thumbnailFormatOptions = [
+  { aspectRatio: "16:9", label: "16:9", detail: "YouTube landscape", width: 1920, height: 1080 },
+  { aspectRatio: "9:16", label: "9:16", detail: "Stories / Shorts vertical", width: 1080, height: 1920 },
+  { aspectRatio: "21:9", label: "21:9", detail: "Cinematic banner", width: 2560, height: 1080 }
+];
+
+const deliveryPlatformOptions = [
+  { key: "youtube", label: "YouTube", defaultPrivacy: "private draft" },
+  { key: "youtubeStories", label: "YouTube Stories", defaultPrivacy: "manual" },
+  { key: "instagram", label: "Instagram", defaultPrivacy: "manual" },
+  { key: "instagramStories", label: "Instagram Stories", defaultPrivacy: "manual" },
+  { key: "tiktok", label: "TikTok", defaultPrivacy: "manual" },
+  { key: "linkedin", label: "LinkedIn", defaultPrivacy: "manual" },
+  { key: "vimeo", label: "Vimeo", defaultPrivacy: "manual" },
+  { key: "x", label: "X", defaultPrivacy: "manual" }
+];
+
 const youtubeHandoffDefaults = {
   titleReady: false,
   descriptionReady: false,
@@ -3159,7 +3176,10 @@ function ReadinessItem({ check }) {
 }
 
 function defaultThumbnailBrief({ drafts = {}, selectedFormat = {} }) {
-  const aspect = selectedFormat.aspectRatio === "9:16" ? "9x16" : "16x9";
+  const selectedAspect = thumbnailFormatOptions.some((option) => option.aspectRatio === selectedFormat.aspectRatio)
+    ? selectedFormat.aspectRatio
+    : "16:9";
+  const aspect = selectedAspect.replace(":", "x");
   const superText = drafts.youtube?.title || "New Episode";
   const details = [drafts.youtube?.description, (drafts.youtube?.tags || []).join(" ")]
     .filter(Boolean)
@@ -3168,8 +3188,38 @@ function defaultThumbnailBrief({ drafts = {}, selectedFormat = {} }) {
   return {
     superText,
     prompt: `Create a ${aspect} YouTube thumbnail that includes the selected still frame, a dynamic super, and the provided episode information.`,
-    details
+    details,
+    formats: [selectedAspect]
   };
+}
+
+function normalizeThumbnailFormats(formats = [], fallbackAspect = "16:9") {
+  const allowed = new Set(thumbnailFormatOptions.map((option) => option.aspectRatio));
+  const selected = Array.isArray(formats) ? formats : [];
+  const next = selected.filter((format) => allowed.has(format));
+  const fallback = allowed.has(fallbackAspect) ? fallbackAspect : "16:9";
+  return next.length ? [...new Set(next)] : [fallback];
+}
+
+function defaultDeliveryPlatforms({ youtubeDraft = {}, deliveryDraft = {}, socialConfig = {} }) {
+  const savedPlatforms = deliveryDraft.platforms && typeof deliveryDraft.platforms === "object" ? deliveryDraft.platforms : {};
+  return Object.fromEntries(
+    deliveryPlatformOptions.map((platform) => {
+      const saved = savedPlatforms[platform.key] || {};
+      const isYoutube = platform.key === "youtube";
+      return [
+        platform.key,
+        {
+          enabled: saved.enabled ?? isYoutube,
+          title: saved.title || (isYoutube ? youtubeDraft.title || "" : ""),
+          description: saved.description || (isYoutube ? youtubeDraft.description || "" : ""),
+          hashtags: saved.hashtags || socialConfig.hashtags || "",
+          privacy: saved.privacy || (isYoutube ? "private draft" : platform.defaultPrivacy),
+          notes: saved.notes || ""
+        }
+      ];
+    })
+  );
 }
 
 function visibleThumbnailCandidates(outputs = []) {
@@ -3317,6 +3367,19 @@ function FinalReviewPanel({
     setThumbnailBrief((prev) => ({ ...prev, [key]: value }));
   };
 
+  const toggleThumbnailFormat = (aspectRatio, checked) => {
+    setThumbnailBrief((prev) => {
+      const current = normalizeThumbnailFormats(prev.formats, selectedFormat.aspectRatio);
+      const next = checked
+        ? [...new Set([...current, aspectRatio])]
+        : current.filter((format) => format !== aspectRatio);
+      return {
+        ...prev,
+        formats: normalizeThumbnailFormats(next, selectedFormat.aspectRatio)
+      };
+    });
+  };
+
   return (
     <section className={`workPanel finalReviewPanel ${mode}Mode`}>
       {showPreviewTools ? (
@@ -3430,6 +3493,19 @@ function FinalReviewPanel({
               Generate AI Thumbnails
             </button>
           </div>
+          <div className="deliveryFormatSelector">
+            {thumbnailFormatOptions.map((option) => (
+              <label key={option.aspectRatio} className={`formatCheck ${normalizeThumbnailFormats(thumbnailBrief.formats, selectedFormat.aspectRatio).includes(option.aspectRatio) ? "selected" : ""}`}>
+                <input
+                  type="checkbox"
+                  checked={normalizeThumbnailFormats(thumbnailBrief.formats, selectedFormat.aspectRatio).includes(option.aspectRatio)}
+                  onChange={(event) => toggleThumbnailFormat(option.aspectRatio, event.target.checked)}
+                />
+                <span>{option.label}</span>
+                <small>{option.detail}</small>
+              </label>
+            ))}
+          </div>
           <div className="thumbnailBriefGrid">
             <Field label="Dynamic super">
               <input
@@ -3481,6 +3557,7 @@ function FinalReviewPanel({
         selectedThumbnail={selectedThumbnail}
         latestPackage={latestPackage}
         youtubeDraft={drafts.youtube || {}}
+        deliveryDraft={drafts.delivery || {}}
         socialConfig={socialConfig}
         ready={packageReady}
         busy={busy}
@@ -4638,6 +4715,7 @@ function FinalPackagePanel({
   latestPackage,
   latestYoutubeUpload,
   youtubeDraft,
+  deliveryDraft = {},
   socialConfig = {},
   ready,
   busy,
@@ -4655,6 +4733,8 @@ function FinalPackagePanel({
   onConnectYoutube
 }) {
   const youtubeDraftKey = JSON.stringify(youtubeDraft || {});
+  const deliveryDraftKey = JSON.stringify(deliveryDraft || {});
+  const defaultPlatforms = () => defaultDeliveryPlatforms({ youtubeDraft, deliveryDraft, socialConfig });
   const [youtubeForm, setYoutubeForm] = useState(() => ({
     title: youtubeDraft.title || "",
     description: youtubeDraft.description || "",
@@ -4677,6 +4757,7 @@ function FinalPackagePanel({
       ...(youtubeDraft.promotion || {})
     }
   }));
+  const [platformForm, setPlatformForm] = useState(defaultPlatforms);
 
   useEffect(() => {
     const next = JSON.parse(youtubeDraftKey || "{}");
@@ -4704,6 +4785,11 @@ function FinalPackagePanel({
     });
   }, [youtubeDraftKey]);
 
+  useEffect(() => {
+    const nextDelivery = JSON.parse(deliveryDraftKey || "{}");
+    setPlatformForm(defaultDeliveryPlatforms({ youtubeDraft, deliveryDraft: nextDelivery, socialConfig }));
+  }, [deliveryDraftKey, youtubeDraftKey, socialConfig.hashtags]);
+
   function updateYoutubeForm(key, value) {
     setYoutubeForm((prev) => ({
       ...prev,
@@ -4714,6 +4800,16 @@ function FinalPackagePanel({
             readyToPublish: false,
             readyToPublishAt: ""
           })
+    }));
+  }
+
+  function updatePlatform(key, patch) {
+    setPlatformForm((prev) => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] || {}),
+        ...patch
+      }
     }));
   }
 
@@ -4740,6 +4836,9 @@ function FinalPackagePanel({
           ...youtubePromotionDefaults,
           ...(youtubeForm.promotion || {})
         }
+      },
+      delivery: {
+        platforms: platformForm
       }
     };
   }
@@ -5192,6 +5291,80 @@ function FinalPackagePanel({
             NewtBuilder uploads private drafts only. The schedule target and notes are saved here, then applied manually in YouTube Studio.
           </div>
         </div>
+
+        <details className="advancedYoutubeActions deliveryPlatformsPanel" open>
+          <summary>
+            <span>Platform Delivery</span>
+            <Pill tone={Object.values(platformForm).some((platform) => platform.enabled) ? "good" : "neutral"}>
+              {Object.values(platformForm).filter((platform) => platform.enabled).length} selected
+            </Pill>
+          </summary>
+          <div className="deliveryPlatformsGrid">
+            {deliveryPlatformOptions.map((platform) => {
+              const draft = platformForm[platform.key] || {};
+              return (
+                <article key={platform.key} className={`deliveryPlatformCard ${draft.enabled ? "enabled" : ""}`}>
+                  <label className="platformToggleRow">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(draft.enabled)}
+                      onChange={(event) => updatePlatform(platform.key, { enabled: event.target.checked })}
+                    />
+                    <span>{platform.label}</span>
+                    <Pill tone={draft.enabled ? "good" : "neutral"}>{draft.enabled ? "selected" : "manual"}</Pill>
+                  </label>
+                  {draft.enabled ? (
+                    <div className="platformDetails">
+                      <Field label="Title / caption">
+                        <input
+                          value={draft.title || ""}
+                          placeholder={youtubeForm.title || "Auto from episode title"}
+                          onChange={(event) => updatePlatform(platform.key, { title: event.target.value })}
+                        />
+                      </Field>
+                      <Field label="Description">
+                        <textarea
+                          value={draft.description || ""}
+                          rows={3}
+                          placeholder={youtubeForm.description || "Auto from setup and YouTube prep"}
+                          onChange={(event) => updatePlatform(platform.key, { description: event.target.value })}
+                        />
+                      </Field>
+                      <div className="platformDetailGrid">
+                        <Field label="Hashtags">
+                          <input
+                            value={draft.hashtags || ""}
+                            placeholder={socialConfig.hashtags || "#shorts"}
+                            onChange={(event) => updatePlatform(platform.key, { hashtags: event.target.value })}
+                          />
+                        </Field>
+                        <Field label="Privacy / state">
+                          <select
+                            value={draft.privacy || platform.defaultPrivacy}
+                            onChange={(event) => updatePlatform(platform.key, { privacy: event.target.value })}
+                          >
+                            <option value="private draft">Private draft</option>
+                            <option value="manual">Manual</option>
+                            <option value="unlisted">Unlisted</option>
+                            <option value="scheduled">Scheduled manually</option>
+                          </select>
+                        </Field>
+                      </div>
+                      <Field label="Platform notes">
+                        <textarea
+                          value={draft.notes || ""}
+                          rows={2}
+                          placeholder="Platform-specific crop, CTA, client note, or launch reminder"
+                          onChange={(event) => updatePlatform(platform.key, { notes: event.target.value })}
+                        />
+                      </Field>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        </details>
 
         <details className="advancedYoutubeActions youtubePromotionPanel">
           <summary>
