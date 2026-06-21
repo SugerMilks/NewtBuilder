@@ -330,11 +330,20 @@ app.post("/api/episodes", async (req, res) => {
     return res.status(400).json({ error: "Create a show before creating an episode." });
   }
 
+  const episodes = await readEpisodes();
+  const inheritFromEpisodeId = cleanId(req.body.inheritFromEpisodeId);
+  const templateEpisode =
+    episodes.find((episode) => episode.id === inheritFromEpisodeId && episode.showId === show.id) ||
+    episodes.find((episode) => episode.showId === show.id);
+  const inheritedAssets = req.body.inheritAssets === false
+    ? []
+    : await cloneEpisodeAssetsForNewEpisode(templateEpisode);
+  const inheritedDrafts = inheritedEpisodeDrafts({ templateEpisode, show });
   const now = new Date().toISOString();
   const episode = normalizeEpisode({
     id: randomUUID(),
     showId: show.id,
-    title: String(req.body.title || nextEpisodeTitle(show)).trim(),
+    title: String(req.body.title || nextEpisodeTitle(show, episodes)).trim(),
     createdAt: now,
     updatedAt: now,
     scriptText: String(req.body.scriptText || ""),
@@ -343,15 +352,16 @@ app.post("/api/episodes", async (req, res) => {
     format: show.shortFormat,
     automation: show.automation,
     approvals: buildApprovals(show.automation),
-    assets: [],
+    assets: inheritedAssets,
     productionMap: [],
     plan: emptyPlan(),
-    drafts: emptyDrafts(show),
+    drafts: inheritedDrafts,
     outputs: [],
-    jobLog: []
+    jobLog: inheritedAssets.length
+      ? [`Inherited ${inheritedAssets.length} reusable asset${inheritedAssets.length === 1 ? "" : "s"} from ${templateEpisode?.title || "previous episode"}.`]
+      : []
   });
 
-  const episodes = await readEpisodes();
   await writeEpisodes([episode, ...episodes]);
   res.json(episode);
 });
@@ -2055,6 +2065,78 @@ function emptyDrafts(show) {
         communityPost: "",
         pinnedComment: ""
       }
+    },
+    thumbnails: [],
+    finishingLayers: [],
+    social: []
+  };
+}
+
+async function cloneEpisodeAssetsForNewEpisode(templateEpisode) {
+  const templateAssets = Array.isArray(templateEpisode?.assets)
+    ? templateEpisode.assets.map(normalizeAsset).filter((asset) => asset.storedFileName && asset.type === "image")
+    : [];
+  if (!templateAssets.length) return [];
+
+  await mkdir(uploadsDir, { recursive: true });
+  const idMap = new Map();
+  const clones = [];
+  for (const asset of templateAssets) {
+    const sourcePath = resolveAssetPath(asset);
+    if (!sourcePath || !existsSync(sourcePath)) continue;
+    const nextId = randomUUID();
+    const ext = path.extname(asset.storedFileName || asset.fileName || ".png") || ".png";
+    const baseName = safeFileSegment(path.basename(asset.fileName || "asset", path.extname(asset.fileName || "")));
+    const storedFileName = `${Date.now()}-${randomUUID()}-${baseName}${ext}`;
+    await copyFile(sourcePath, path.join(uploadsDir, storedFileName));
+    idMap.set(asset.id, nextId);
+    clones.push({
+      ...asset,
+      id: nextId,
+      storedFileName,
+      localUrl: `/uploads/${storedFileName}`,
+      createdAt: new Date().toISOString(),
+      metadata: {
+        ...(asset.metadata || {}),
+        inheritedFromAssetId: asset.id,
+        inheritedFromEpisodeId: templateEpisode.id || ""
+      }
+    });
+  }
+
+  return clones.map((asset) => {
+    const sourceImageAssetId = asset.metadata?.sourceImageAssetId;
+    if (!sourceImageAssetId || !idMap.has(sourceImageAssetId)) return normalizeAsset(asset);
+    return normalizeAsset({
+      ...asset,
+      metadata: {
+        ...(asset.metadata || {}),
+        sourceImageAssetId: idMap.get(sourceImageAssetId)
+      }
+    });
+  });
+}
+
+function inheritedEpisodeDrafts({ templateEpisode, show }) {
+  const base = emptyDrafts(show);
+  const template = templateEpisode?.drafts || {};
+  const youtube = template.youtube || {};
+  const delivery = template.delivery || {};
+  return {
+    ...base,
+    youtube: {
+      ...base.youtube,
+      tags: Array.isArray(youtube.tags) && youtube.tags.length ? youtube.tags : base.youtube.tags,
+      categoryId: youtube.categoryId || base.youtube.categoryId,
+      notifySubscribers: Boolean(youtube.notifySubscribers ?? base.youtube.notifySubscribers),
+      madeForKids: Boolean(youtube.madeForKids ?? base.youtube.madeForKids),
+      containsSyntheticMedia: youtube.containsSyntheticMedia !== false,
+      promotion: {
+        ...base.youtube.promotion
+      }
+    },
+    delivery: {
+      platforms: delivery.platforms && typeof delivery.platforms === "object" ? delivery.platforms : {}
     },
     thumbnails: [],
     finishingLayers: [],
@@ -7587,11 +7669,9 @@ function approvalTitle(id) {
   return approvalTemplates.find((gate) => gate.id === id)?.title || "Approval";
 }
 
-function nextEpisodeTitle(show) {
-  return `${show.name} Episode ${new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric"
-  })}`;
+function nextEpisodeTitle(show, episodes = []) {
+  const nextNumber = (Array.isArray(episodes) ? episodes : []).filter((episode) => episode.showId === show.id).length + 1;
+  return `${show.name} Episode ${nextNumber}`;
 }
 
 function firstMeaningfulLine(scriptText) {

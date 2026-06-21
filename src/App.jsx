@@ -1198,7 +1198,18 @@ export default function App() {
         body: JSON.stringify(showDraft)
       });
       setShows((prev) => [show, ...prev.filter((item) => item.id !== show.id)]);
-      setStatus("Show profile saved.");
+      setShowDraft(structuredClone(show));
+      if (episodeDraft?.id) {
+        const episode = await request(`/api/episodes/${episodeDraft.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(episodeDraft)
+        });
+        setEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
+        setAllEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
+        setActiveEpisodeId(episode.id);
+        setEpisodeDraft(structuredClone(episode));
+      }
+      setStatus(episodeDraft?.id ? "Setup saved." : "Show profile saved.");
     } catch (error) {
       setStatus(error.message);
     } finally {
@@ -1279,7 +1290,10 @@ export default function App() {
     }
     const episode = await request("/api/episodes", {
       method: "POST",
-      body: JSON.stringify({ showId: show.id, title: `${show.name} Episode` })
+      body: JSON.stringify({
+        showId: show.id,
+        inheritFromEpisodeId: activeEpisode?.showId === show.id ? activeEpisode.id : ""
+      })
     });
     setEpisodes((prev) => [episode, ...prev]);
     setAllEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
@@ -2332,6 +2346,8 @@ export default function App() {
   const maskEditorImage = maskEditorLine ? visualAssets.find((asset) => asset.id === maskEditorLine.assetId) || null : null;
   const maskEditorMask = maskEditorLine ? maskAssets.find((asset) => asset.id === maskEditorLine.maskAssetId) || null : null;
   const currentShowEpisodes = episodes.filter((episode) => !activeShowId || episode.showId === activeShowId);
+  const orderedShowEpisodes = [...currentShowEpisodes].sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
+  const activeEpisodeNumber = orderedShowEpisodes.findIndex((episode) => episode.id === activeEpisodeId) + 1;
   const libraryView = appView === "library";
   const showDashboardView = appView === "show";
   const workspaceView = appView === "episode";
@@ -2471,6 +2487,30 @@ export default function App() {
                   </button>
                 }
               >
+                <div className="setupEpisodeSwitcher">
+                  <Field label="Current episode">
+                    <select
+                      value={activeEpisodeId || ""}
+                      onChange={(event) => openEpisode(event.target.value)}
+                      disabled={!currentShowEpisodes.length || busy}
+                    >
+                      {!orderedShowEpisodes.length ? <option value="">Create an episode to begin</option> : null}
+                      {orderedShowEpisodes.map((episode, index) => (
+                        <option key={episode.id} value={episode.id}>
+                          Episode {index + 1} / {episode.title}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <div className="episodeNumberBadge">
+                    <span>Show episode</span>
+                    <strong>{activeEpisodeNumber ? `#${activeEpisodeNumber}` : "None"}</strong>
+                  </div>
+                  <button className="secondaryButton" type="button" onClick={createEpisode} disabled={!activeShow || busy}>
+                    <Plus size={16} />
+                    New Episode
+                  </button>
+                </div>
                 <div className="identityCompactRow">
                   <Field label="Show name">
                     <input value={showDraft.name} onChange={(event) => updateShowDraft(["name"], event.target.value)} />
