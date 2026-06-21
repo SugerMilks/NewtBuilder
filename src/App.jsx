@@ -2160,6 +2160,19 @@ export default function App() {
         resolution: resolutionForFormat(aspectRatio, prev.shortFormat?.resolutionMode)
       }
     }));
+    setEpisodeDraft((prev) => {
+      if (!prev) return prev;
+      const resolutionMode = normalizeResolutionMode(prev.format?.resolutionMode || showDraft?.shortFormat?.resolutionMode);
+      return {
+        ...prev,
+        format: {
+          ...(prev.format || {}),
+          resolutionMode,
+          aspectRatio,
+          resolution: resolutionForFormat(aspectRatio, resolutionMode)
+        }
+      };
+    });
   }
 
   function setShowResolutionMode(resolutionMode) {
@@ -2173,6 +2186,19 @@ export default function App() {
         resolution: resolutionForFormat(prev.shortFormat?.aspectRatio, nextMode)
       }
     }));
+    setEpisodeDraft((prev) => {
+      if (!prev) return prev;
+      const aspectRatio = prev.format?.aspectRatio || showDraft?.shortFormat?.aspectRatio || "16:9";
+      return {
+        ...prev,
+        format: {
+          ...(prev.format || {}),
+          resolutionMode: nextMode,
+          aspectRatio,
+          resolution: resolutionForFormat(aspectRatio, nextMode)
+        }
+      };
+    });
   }
 
   function setEpisodeAspect(aspectRatio) {
@@ -2544,7 +2570,7 @@ export default function App() {
                 </div>
                 <div className="setupControlGrid">
                   <Field label="Aspect ratio">
-                    <select value={showDraft.shortFormat?.aspectRatio || "16:9"} onChange={(event) => setShowAspect(event.target.value)}>
+                    <select value={selectedFormat.aspectRatio || showDraft.shortFormat?.aspectRatio || "16:9"} onChange={(event) => setShowAspect(event.target.value)}>
                       {formatOptions.map((option) => (
                         <option key={option.aspectRatio} value={option.aspectRatio}>
                           {option.label} {option.detail}
@@ -2563,7 +2589,7 @@ export default function App() {
                   </Field>
                   <Field label="Resolution">
                     <select
-                      value={normalizeResolutionMode(showDraft.shortFormat?.resolutionMode)}
+                      value={normalizeResolutionMode(selectedFormat.resolutionMode || showDraft.shortFormat?.resolutionMode)}
                       onChange={(event) => setShowResolutionMode(event.target.value)}
                     >
                       <option value="high">High Definition (1080p)</option>
@@ -2571,7 +2597,17 @@ export default function App() {
                     </select>
                   </Field>
                   <Field label="Output">
-                    <input value={showDraft.shortFormat?.resolution || resolutionForFormat(showDraft.shortFormat?.aspectRatio, showDraft.shortFormat?.resolutionMode)} readOnly />
+                    <input
+                      value={
+                        selectedFormat.resolution ||
+                        showDraft.shortFormat?.resolution ||
+                        resolutionForFormat(
+                          selectedFormat.aspectRatio || showDraft.shortFormat?.aspectRatio,
+                          selectedFormat.resolutionMode || showDraft.shortFormat?.resolutionMode
+                        )
+                      }
+                      readOnly
+                    />
                   </Field>
                 </div>
                 {!episodeDraft ? (
