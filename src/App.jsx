@@ -3950,7 +3950,7 @@ function FinishingLayersPanel({
             <strong>{finishedMasterOutput ? "Finished master exported" : baseFinalOutput ? "Add final graphics or sound" : "Render final video first"}</strong>
             <span>
               {finishedMasterOutput
-                ? "YouTube Prep will use the finished master."
+                ? "Delivery Prep will use the finished master."
                 : "Add image/video overlays or extra audio after the episode render, without changing the original final render."}
             </span>
           </div>
@@ -4891,7 +4891,7 @@ function FinalPackagePanel({
       <div className="deliveryNodeHeader packageNodeHeader">
         <div>
           <span className="eyebrow">Delivery Node</span>
-          <h3>{latestYoutubeUpload?.videoId ? "Episode Complete" : "YouTube Prep"}</h3>
+          <h3>{latestYoutubeUpload?.videoId ? "Episode Complete" : "Delivery Prep"}</h3>
         </div>
         <Pill tone={youtubeSummaryTone}>{youtubeSummaryLabel}</Pill>
       </div>
@@ -5190,7 +5190,7 @@ function FinalPackagePanel({
               </Field>
             </div>
             <div className="manualPublishNotice">
-              These drafts are saved with YouTube Prep and included in the export package. Posting remains manual.
+              These drafts are saved with Delivery Prep and included in the export package. Posting remains manual.
             </div>
           </section>
         </div>
@@ -5276,7 +5276,7 @@ function FinalPackagePanel({
         <div className="packageActions primaryYoutubeActions">
           <button className="secondaryButton" onClick={saveDraft} disabled={busy}>
             <Save size={16} />
-            Save YouTube Prep
+            Save Delivery Prep
           </button>
           <button className="secondaryButton" onClick={onConnectYoutube} disabled={busy}>
             <Youtube size={16} />
