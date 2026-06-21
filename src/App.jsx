@@ -916,7 +916,7 @@ function AssetNodeCanvas({ children, connections = {}, onAddCharacter, onFocusNo
       <article className={`assetInputNode ${connectedCount >= 2 ? "ready" : ""}`}>
         <span className="nodePort input" />
         <strong>INPUT</strong>
-        <small>{connectedCount}/3 linked</small>
+        <small>{connectedCount >= 2 ? "ready" : `${connectedCount}/2 required`}</small>
       </article>
       {menu ? (
         <div className="assetContextMenu" style={{ left: menu.x, top: menu.y }} onClick={(event) => event.stopPropagation()}>
@@ -2645,12 +2645,12 @@ export default function App() {
             )}
 
             {showDraft && activeWorkflowSection.key === "assets" && (
-              <CollapsiblePanel
-                className="characterPanel"
-                eyebrow="Assets"
-                title="Node Inputs"
-                defaultOpen
-                action={
+              <section className="workPanel assetsWorkflowPanel">
+                <div className="panelHeader assetsWorkflowHeader">
+                  <div>
+                    <span className="eyebrow">Assets</span>
+                    <h3>Node Inputs</h3>
+                  </div>
                   <div className="buttonRow">
                     <Pill tone={voicesSource === "elevenlabs" ? "good" : "warn"}>
                       {voicesSource === "elevenlabs" ? "ElevenLabs" : "Demo voices"}
@@ -2666,8 +2666,7 @@ export default function App() {
                       Character
                     </button>
                   </div>
-                }
-              >
+                </div>
                 <AssetNodeCanvas
                   connections={assetNodeConnections}
                   onAddCharacter={addCharacter}
@@ -2796,7 +2795,7 @@ export default function App() {
                     />
                   </article>
                 </AssetNodeCanvas>
-              </CollapsiblePanel>
+              </section>
             )}
 
             {activeWorkflowSection.key === "script" && (

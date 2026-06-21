@@ -592,6 +592,22 @@ main {
 }
 
 /* Node-based Assets canvas */
+.assetsWorkflowPanel {
+  display: grid;
+  gap: 14px;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(216, 198, 255, 0.12), transparent 31%),
+    radial-gradient(circle at 88% 74%, rgba(232, 183, 119, 0.10), transparent 34%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.03));
+}
+
+.assetsWorkflowHeader {
+  padding: 4px 4px 0;
+}
+
 .assetNodeCanvas {
   position: relative;
   min-height: 640px;
@@ -2147,8 +2163,7 @@ label:has(textarea:disabled) {
   margin: -8px 0 14px;
 }
 
-.showIdentityPanel,
-.characterPanel {
+.showIdentityPanel {
   grid-column: span 2;
 }
 
@@ -4985,8 +5000,7 @@ label:has(textarea:disabled) {
     grid-template-columns: 1fr;
   }
 
-  .showIdentityPanel,
-  .characterPanel {
+  .showIdentityPanel {
     grid-column: auto;
   }
 
