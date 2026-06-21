@@ -811,7 +811,7 @@ export default function App() {
   const [activeShowId, setActiveShowId] = useState("");
   const [activeEpisodeId, setActiveEpisodeId] = useState("");
   const [appView, setAppView] = useState("library");
-  const [activeTab, setActiveTab] = useState("setup");
+  const [activeTab, setActiveTab] = useState("");
   const [busy, setBusy] = useState(false);
   const [busyAction, setBusyAction] = useState("");
   const [status, setStatus] = useState("");
@@ -1004,7 +1004,7 @@ export default function App() {
   function openEpisode(episodeId) {
     if (!episodeId) return;
     setActiveEpisodeId(episodeId);
-    setActiveTab("setup");
+    setActiveTab("");
     setAppView("episode");
   }
 
@@ -1131,7 +1131,6 @@ export default function App() {
       setAllEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
       setActiveEpisodeId(episode.id);
       setEpisodeDraft(structuredClone(episode));
-      setActiveTab("assets");
       setStatus("Setup approved. Assets are unlocked.");
     } catch (error) {
       setStatus(error.message);
@@ -1198,7 +1197,7 @@ export default function App() {
     try {
       await createEpisodeForShow(activeShow);
       setAppView("episode");
-      setActiveTab("setup");
+      setActiveTab("");
       setStatus("Episode created.");
     } catch (error) {
       setStatus(error.message);
@@ -2318,10 +2317,8 @@ export default function App() {
     }[section.key];
     return { ...section, ...state };
   });
-  const activeWorkflowSection =
-    workflowState.find((section) => section.key === activeTab && section.enabled) ||
-    workflowState.find((section) => section.enabled) ||
-    workflowState[0];
+  const activeWorkflowSection = workflowState.find((section) => section.key === activeTab && section.enabled) || null;
+  const activeWorkflowKey = activeWorkflowSection?.key || "";
   const selectWorkflowSection = (sectionKey) => {
     const section = workflowState.find((item) => item.key === sectionKey);
     if (section?.enabled) setActiveTab(sectionKey);
@@ -2346,7 +2343,7 @@ export default function App() {
     ? "Show Library"
     : showDashboardView
       ? "Episodes"
-      : `${workspaceEpisodeLabel} / ${activeWorkflowSection?.label || "Setup"}`;
+      : `${workspaceEpisodeLabel}${activeWorkflowSection?.label ? ` / ${activeWorkflowSection.label}` : ""}`;
   const workflowRailStatus = workspaceView
     ? [
         { icon: Gauge, label: "Format", value: selectedFormat.resolution || selectedFormat.aspectRatio || "Not set" },
@@ -2443,15 +2440,17 @@ export default function App() {
           <div className="projectWorkspace">
             <WorkflowRail
               sections={workflowState}
-              activeSection={activeWorkflowSection.key}
+              activeSection={activeWorkflowKey}
               onSelect={selectWorkflowSection}
               statusItems={workflowRailStatus}
             />
             <div className="projectCanvasStack">
 
-        {workspaceView && ["setup", "assets", "script", "storyboard"].includes(activeWorkflowSection.key) && (
+        {workspaceView && !activeWorkflowSection ? <div className="workflowBlankCanvas" aria-hidden="true" /> : null}
+
+        {workspaceView && ["setup", "assets", "script", "storyboard"].includes(activeWorkflowKey) && (
           <div className="studioGrid">
-            {showDraft && activeWorkflowSection.key === "setup" && (
+            {showDraft && activeWorkflowKey === "setup" && (
               <section className="workPanel setupWorkflowPanel">
                 <div className="panelHeader setupWorkflowHeader">
                   <div>
@@ -2566,7 +2565,7 @@ export default function App() {
               </section>
             )}
 
-            {showDraft && activeWorkflowSection.key === "assets" && (
+            {showDraft && activeWorkflowKey === "assets" && (
               <section className="workPanel assetsWorkflowPanel">
                 <div className="panelHeader assetsWorkflowHeader">
                   <div>
@@ -2721,7 +2720,7 @@ export default function App() {
               </section>
             )}
 
-            {activeWorkflowSection.key === "script" && (
+            {activeWorkflowKey === "script" && (
               <section className="scriptNodeCanvas">
                 <article className="scriptInputNode">
                   <div className="nodeHeader scriptNodeHeader">
@@ -2790,7 +2789,7 @@ export default function App() {
               </section>
             )}
 
-            {activeWorkflowSection.key === "storyboard" && (
+            {activeWorkflowKey === "storyboard" && (
             <ProductionMapPanel
               productionMap={productionMap}
               characters={activeShow?.characters || []}
@@ -2819,15 +2818,15 @@ export default function App() {
           </div>
         )}
 
-        {workspaceView && ["preview", "composite", "delivery"].includes(activeWorkflowSection.key) && (
+        {workspaceView && ["preview", "composite", "delivery"].includes(activeWorkflowKey) && (
           <section className="approvalsView">
             <div className="editorBand">
               <div>
-                <span className="eyebrow">{activeWorkflowSection.label}</span>
+                <span className="eyebrow">{activeWorkflowSection?.label}</span>
                 <h3>{activeEpisode?.title || "No episode selected"}</h3>
               </div>
             </div>
-            {activeWorkflowSection.key === "preview" ? (
+            {activeWorkflowKey === "preview" ? (
               <PreviewWorkflowPanel
                 audioOutput={audioOutput}
                 previewOutput={previewOutput}
@@ -2844,7 +2843,7 @@ export default function App() {
               />
             ) : (
               <FinalReviewPanel
-                mode={activeWorkflowSection.key}
+                mode={activeWorkflowKey}
                 audioOutput={audioOutput}
                 previewOutput={previewOutput}
                 finalOutput={finalOutput}
