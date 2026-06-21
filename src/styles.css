@@ -2488,9 +2488,7 @@ label:has(textarea:disabled) {
 .previewWorkflowCanvas {
   display: grid;
   grid-template-columns: minmax(260px, 0.45fr) minmax(420px, 1fr);
-  grid-template-areas:
-    "commands output"
-    "audio output";
+  grid-template-areas: "commands output";
   gap: 16px;
   align-items: stretch;
   overflow: hidden;
@@ -2507,8 +2505,7 @@ label:has(textarea:disabled) {
 }
 
 .previewCommandNode,
-.previewOutputNode,
-.previewAudioNode {
+.previewOutputNode {
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 24px;
@@ -2617,19 +2614,6 @@ label:has(textarea:disabled) {
   100% {
     transform: translateX(250%);
   }
-}
-
-.previewAudioNode {
-  grid-area: audio;
-  display: grid;
-  gap: 12px;
-  align-content: start;
-  padding: 16px;
-}
-
-.previewAudioNode audio {
-  width: 100%;
-  height: 36px;
 }
 
 .finalReviewPanel {

@@ -2837,7 +2837,6 @@ export default function App() {
             </div>
             {activeWorkflowKey === "preview" ? (
               <PreviewWorkflowPanel
-                audioOutput={audioOutput}
                 previewOutput={previewOutput}
                 finalOutput={baseFinalOutput}
                 selectedFormat={selectedFormat}
@@ -3109,7 +3108,6 @@ function AutomationRunbookPanel({ automation = {}, safety = {} }) {
 }
 
 function PreviewWorkflowPanel({
-  audioOutput,
   previewOutput,
   finalOutput,
   selectedFormat,
@@ -3201,19 +3199,6 @@ function PreviewWorkflowPanel({
         )}
       </article>
 
-      <article className="previewAudioNode">
-        <div className="audioReviewHeader">
-          <div>
-            <span className="eyebrow">Final Audio</span>
-            <strong>{audioOutput?.name || "No mix yet"}</strong>
-          </div>
-        </div>
-        {audioOutput?.localUrl ? (
-          <audio controls preload="metadata" src={audioOutput.localUrl} />
-        ) : (
-          <div className="emptyState compact">No audio preview yet.</div>
-        )}
-      </article>
     </section>
   );
 }
