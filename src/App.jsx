@@ -791,6 +791,7 @@ function AssetNodeCanvas({ children, connections = {}, onConnectNode, onFocusNod
       </article>
       {menu ? (
         <div className="assetContextMenu" style={{ left: menu.x, top: menu.y }} onClick={(event) => event.stopPropagation()}>
+          <div className="assetContextMenuTitle">Link to INPUT</div>
           <button type="button" className={normalizedConnections.character ? "connected" : ""} onClick={() => selectNode("character", "character-node")}>
             <span>Character node</span>
             {normalizedConnections.character ? <Check size={14} /> : null}
