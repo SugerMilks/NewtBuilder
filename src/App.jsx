@@ -2960,6 +2960,7 @@ export default function App() {
               characters={activeShow?.characters || []}
               voices={voices}
               shotTypes={productionShotTypes}
+              aspectRatio={selectedFormat.aspectRatio}
               visualAssets={visualAssets}
               maskAssets={maskAssets}
               onUpdate={updateProductionLine}
@@ -6113,6 +6114,7 @@ function ProductionMapPanel({
   characters,
   voices,
   shotTypes,
+  aspectRatio,
   visualAssets,
   maskAssets,
   onUpdate,
@@ -6385,6 +6387,7 @@ function ProductionMapPanel({
                   line={line}
                   isInsert={isInsert}
                   selectedAsset={selectedAsset}
+                  aspectRatio={aspectRatio}
                   isSelected={selectedLineIds.has(line.id)}
                   isDragging={dragLineId === line.id}
                   dropPlacement={dropTarget?.lineId === line.id ? dropTarget.placement : ""}
@@ -6442,6 +6445,7 @@ function StoryboardFrameCard({
   line,
   isInsert,
   selectedAsset,
+  aspectRatio,
   isSelected,
   isDragging,
   dropPlacement,
@@ -6507,7 +6511,7 @@ function StoryboardFrameCard({
       onDrop={(event) => onDrop(event, line.id)}
       onDragEnd={onDragEnd}
     >
-      <div className="storyboardFrameMedia">
+      <div className="storyboardFrameMedia" style={{ "--storyboard-frame-aspect": cssAspectRatio(aspectRatio || "16:9") }}>
         {videoUrl ? (
           <video src={videoUrl} muted playsInline preload="metadata" />
         ) : selectedAsset?.localUrl ? (

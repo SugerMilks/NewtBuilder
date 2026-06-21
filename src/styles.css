@@ -986,7 +986,7 @@ main {
 
 .storyboardFrameMedia {
   position: relative;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--storyboard-frame-aspect, 16 / 9);
   overflow: hidden;
   background:
     radial-gradient(circle at center, rgba(216, 198, 255, 0.16), transparent 38%),
