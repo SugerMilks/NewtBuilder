@@ -990,11 +990,12 @@ main {
 
 /* Storyboard canvas */
 .storyboardCanvasPanel {
+  position: relative;
   display: grid;
-  gap: 8px;
+  gap: 0;
   overflow: hidden;
   border-radius: 28px;
-  padding: 10px;
+  padding: 8px;
   background:
     radial-gradient(circle at 12% 20%, rgba(216, 198, 255, 0.13), transparent 32%),
     radial-gradient(circle at 88% 76%, rgba(109, 208, 165, 0.10), transparent 34%),
@@ -1005,15 +1006,17 @@ main {
 }
 
 .storyboardSelectionToolbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 12;
+  transform: translateX(-50%);
   justify-self: center;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   max-width: 100%;
-  margin: 0 0 2px;
+  margin: 0;
   padding: 7px 8px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
@@ -1025,8 +1028,8 @@ main {
 .productionStoryboardGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
+  gap: 2px;
+  padding: 2px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.045);
 }
