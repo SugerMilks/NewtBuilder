@@ -4224,7 +4224,7 @@ async function generateAiThumbnailCandidates({ episode, show, thumbnailBrief = {
   const outputs = [];
 
   try {
-    const assetReferences = await thumbnailReferenceAssetPaths({ episode, tempDir });
+    const assetReferences = await thumbnailReferenceAssetPaths({ episode, show, tempDir });
     if (!sourcePath && !assetReferences.length) {
       throw new Error("Upload shot images or build a render before generating AI thumbnails.");
     }
@@ -5836,10 +5836,12 @@ async function extractThumbnailReferenceFrame({ sourcePath, outputPath, timestam
   );
 }
 
-async function thumbnailReferenceAssetPaths({ episode, tempDir }) {
+async function thumbnailReferenceAssetPaths({ episode, show, tempDir }) {
   const assets = Array.isArray(episode.assets) ? episode.assets.map(normalizeAsset) : [];
   const imageAssets = assets.filter((asset) => asset.type === "image" && asset.shotRole !== "mask");
+  const characterHeadshots = characterHeadshotReferences(show);
   const ranked = [
+    ...characterHeadshots,
     ...imageAssets.filter((asset) => asset.shotRole === "character_one_shot"),
     ...imageAssets.filter((asset) => asset.shotRole === "wide_shot"),
     ...imageAssets.filter((asset) => asset.shotRole === "medium_two_shot"),
@@ -5849,7 +5851,7 @@ async function thumbnailReferenceAssetPaths({ episode, tempDir }) {
   const seen = new Set();
   const references = [];
   for (const asset of ranked) {
-    const sourcePath = resolveAssetPath(asset);
+    const sourcePath = asset.sourcePath || resolveAssetPath(asset);
     if (!sourcePath || seen.has(sourcePath)) continue;
     seen.add(sourcePath);
     const outputPath = path.join(tempDir, `ref-${String(references.length + 1).padStart(2, "0")}.jpg`);
@@ -5858,6 +5860,33 @@ async function thumbnailReferenceAssetPaths({ episode, tempDir }) {
     if (references.length >= 4) break;
   }
   return references;
+}
+
+function characterHeadshotReferences(show) {
+  const characters = Array.isArray(show?.characters) ? show.characters : [];
+  return characters
+    .map((character) => {
+      const headshot = normalizeCharacterHeadshot(character.headshot);
+      const sourcePath = resolveStoredProjectFile(headshot?.storedFileName, headshot?.localUrl);
+      if (!sourcePath) return null;
+      return {
+        type: "image",
+        shotRole: "character_headshot",
+        fileName: headshot.fileName || `${character.name || "character"} headshot`,
+        sourcePath,
+        characterName: String(character.name || "").trim(),
+        visualNotes: String(character.visualNotes || "").trim()
+      };
+    })
+    .filter(Boolean);
+}
+
+function resolveStoredProjectFile(storedFileName = "", localUrl = "") {
+  if (storedFileName) {
+    const filePath = path.resolve(uploadsDir, path.basename(storedFileName));
+    if (filePath.startsWith(`${path.resolve(uploadsDir)}${path.sep}`) && existsSync(filePath)) return filePath;
+  }
+  return localProjectFilePath(localUrl) || "";
 }
 
 async function prepareThumbnailReferenceImage({ sourcePath, outputPath }) {
@@ -5883,6 +5912,7 @@ function aiThumbnailPrompt({ episode, show, variant, title, format, thumbnailBri
   const planBeats = Array.isArray(episode.plan?.beats) ? episode.plan.beats : [];
   const hook = compactText(planBeats[0]?.text || episode.drafts?.youtube?.description || episode.scriptText || episode.title, 420);
   const characterNames = uniqueStrings((show.characters || []).map((character) => character.name).filter(Boolean)).join(", ");
+  const characterNotes = thumbnailCharacterContext(show);
   const visualStyle = show.creative?.visualStyle || "bright expressive 2D cartoon, polished animated short";
   const thumbnailStyle = show.creative?.thumbnailStyle || "bold character moment, clean text, strong expression";
   const aspect = format?.promptAspect || "wide 16:9 YouTube thumbnail";
@@ -5905,6 +5935,7 @@ function aiThumbnailPrompt({ episode, show, variant, title, format, thumbnailBri
       `Preserve the exact character designs, color palette, and episode visual style from the references.`,
       `Visual style: ${visualStyle}. Thumbnail style: ${thumbnailStyle}.`,
       characterNames ? `Characters to preserve when present: ${characterNames}.` : "",
+      characterNotes ? `Character visual notes from Cast headshots: ${characterNotes}.` : "",
       `Story hook: ${hook}.`,
       `Composition: ${variant.prompt}. Make one clear emotional focal point, strong readable faces, clean negative space for the title, bright child-friendly polish, high contrast, and no clutter.`,
       "Constraints: no logos, no watermark, no captions beyond the dynamic super text, no misspelled text, no photoreal humans, no distorted faces, no extra characters beyond the references."
@@ -5912,6 +5943,24 @@ function aiThumbnailPrompt({ episode, show, variant, title, format, thumbnailBri
       .filter(Boolean)
       .join(" "),
     3000
+  );
+}
+
+function thumbnailCharacterContext(show) {
+  const characters = Array.isArray(show?.characters) ? show.characters : [];
+  return compactText(
+    characters
+      .map((character) => {
+        const details = [character.name, character.role, character.visualNotes]
+          .map((value) => String(value || "").trim())
+          .filter(Boolean)
+          .join(": ");
+        const headshot = normalizeCharacterHeadshot(character.headshot);
+        return details ? `${details}${headshot?.fileName ? ` (headshot: ${headshot.fileName})` : ""}` : "";
+      })
+      .filter(Boolean)
+      .join(" | "),
+    600
   );
 }
 
