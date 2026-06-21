@@ -5393,11 +5393,14 @@ function FinalPackagePanel({
   const completedFinalQaChecks = finalQaChecks.filter((check) => check.status === "pass").length;
 
   return (
-    <details className="reviewDetails finalPackagePanel" open>
-      <summary>
-        <span>{latestYoutubeUpload?.videoId ? "Episode Complete" : "YouTube Prep"}</span>
+    <article className="deliveryPackageNode finalPackagePanel">
+      <div className="deliveryNodeHeader packageNodeHeader">
+        <div>
+          <span className="eyebrow">Delivery Node</span>
+          <h3>{latestYoutubeUpload?.videoId ? "Episode Complete" : "YouTube Prep"}</h3>
+        </div>
         <Pill tone={youtubeSummaryTone}>{youtubeSummaryLabel}</Pill>
-      </summary>
+      </div>
       <div className="finalPackageBody">
         <div className={`episodeCompletePanel ${latestYoutubeUpload?.videoId ? "uploaded" : ""}`}>
           <div className="episodeCompleteHeader">
@@ -5662,13 +5665,16 @@ function FinalPackagePanel({
           </div>
         </div>
 
-        <details className="advancedYoutubeActions deliveryPlatformsPanel" open>
-          <summary>
-            <span>Platform Delivery</span>
+        <section className="deliveryNodeCard deliveryPlatformsPanel">
+          <div className="deliveryCardHeader">
+            <div>
+              <strong>Platform Delivery</strong>
+              <span>Select destination prep and expand only the platforms this episode needs.</span>
+            </div>
             <Pill tone={Object.values(platformForm).some((platform) => platform.enabled) ? "good" : "neutral"}>
               {Object.values(platformForm).filter((platform) => platform.enabled).length} selected
             </Pill>
-          </summary>
+          </div>
           <div className="deliveryPlatformsGrid">
             {deliveryPlatformOptions.map((platform) => {
               const draft = platformForm[platform.key] || {};
@@ -5734,13 +5740,16 @@ function FinalPackagePanel({
               );
             })}
           </div>
-        </details>
+        </section>
 
-        <details className="advancedYoutubeActions youtubePromotionPanel">
-          <summary>
-            <span>Promotion Prep</span>
+        <section className="deliveryNodeCard youtubePromotionPanel">
+          <div className="deliveryCardHeader">
+            <div>
+              <strong>Promotion Prep</strong>
+              <span>Draft YouTube-only community copy for manual posting after the private draft is reviewed.</span>
+            </div>
             <Pill tone={promotionReady ? "good" : "neutral"}>{promotionReady ? "drafted" : "YouTube only"}</Pill>
-          </summary>
+          </div>
           <div className="promotionPrepBody">
             <div className="promotionPrepHeader">
               <span>Prepare copy for a manual YouTube Community post and pinned comment.</span>
@@ -5771,7 +5780,7 @@ function FinalPackagePanel({
               These drafts are saved with YouTube Prep and included in the export package. Posting remains manual.
             </div>
           </div>
-        </details>
+        </section>
 
         <div className="packageActions primaryYoutubeActions">
           <button className="secondaryButton" onClick={saveDraft} disabled={busy}>
@@ -5854,8 +5863,13 @@ function FinalPackagePanel({
           ) : null}
         </div>
 
-        <details className="advancedYoutubeActions">
-          <summary>Advanced & files</summary>
+        <section className="deliveryNodeCard deliveryFilesPanel">
+          <div className="deliveryCardHeader">
+            <div>
+              <strong>Files & Handoff</strong>
+              <span>Export metadata packets and open the saved YouTube draft when needed.</span>
+            </div>
+          </div>
           <div className="packageActions">
             <button className="secondaryButton" onClick={exportPackage} disabled={!ready || busy}>
               <FileText size={17} />
@@ -5904,9 +5918,9 @@ function FinalPackagePanel({
               </a>
             ) : null}
           </div>
-        </details>
+        </section>
       </div>
-    </details>
+    </article>
   );
 }
 

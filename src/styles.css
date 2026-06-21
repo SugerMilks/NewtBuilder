@@ -91,6 +91,8 @@ body::before {
 .showCreateTile,
 .episodeCard,
 .reviewDetails,
+.deliveryPackageNode,
+.deliveryNodeCard,
 .connectionStatus,
 .automationStageCard {
   border-color: rgba(255, 255, 255, 0.13);
@@ -320,7 +322,9 @@ main {
 }
 
 .workPanel,
-.reviewDetails {
+.reviewDetails,
+.deliveryPackageNode,
+.deliveryNodeCard {
   border-radius: 24px;
 }
 
@@ -2361,7 +2365,8 @@ label:has(textarea:disabled) {
   margin-top: 4px;
 }
 
-.deliveryThumbnailNode {
+.deliveryThumbnailNode,
+.deliveryPackageNode {
   display: grid;
   gap: 14px;
   margin-bottom: 14px;
@@ -2379,6 +2384,10 @@ label:has(textarea:disabled) {
   backdrop-filter: blur(20px) saturate(132%);
 }
 
+.deliveryPackageNode {
+  margin-bottom: 0;
+}
+
 .deliveryNodeHeader {
   display: flex;
   align-items: center;
@@ -2386,8 +2395,16 @@ label:has(textarea:disabled) {
   gap: 16px;
 }
 
+.deliveryNodeHeader > div {
+  min-width: 0;
+}
+
 .deliveryNodeHeader h3 {
   margin-top: 2px;
+}
+
+.packageNodeHeader {
+  padding: 2px 2px 6px;
 }
 
 .thumbnailReviewBody {
@@ -2982,7 +2999,40 @@ label:has(textarea:disabled) {
 
 .finalPackageBody {
   display: grid;
+  gap: 14px;
+}
+
+.deliveryNodeCard {
+  display: grid;
   gap: 12px;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.deliveryCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.deliveryCardHeader > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.deliveryCardHeader strong,
+.deliveryCardHeader span {
+  display: block;
+}
+
+.deliveryCardHeader span {
+  color: var(--muted);
+  line-height: 1.35;
+  font-size: 13px;
 }
 
 .episodeCompletePanel {
@@ -3444,38 +3494,9 @@ label:has(textarea:disabled) {
   text-decoration: none;
 }
 
-.advancedYoutubeActions {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #191914;
-}
-
-.advancedYoutubeActions summary {
-  min-height: 44px;
-  padding: 10px 12px;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.advancedYoutubeActions[open] summary {
-  border-bottom: 1px solid var(--line);
-}
-
-.advancedYoutubeActions .packageActions {
-  padding: 10px 12px 12px;
-}
-
-.youtubePromotionPanel summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .promotionPrepBody {
   display: grid;
   gap: 12px;
-  padding: 12px;
 }
 
 .promotionPrepHeader {
