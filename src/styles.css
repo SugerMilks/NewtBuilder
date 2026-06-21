@@ -146,16 +146,6 @@ main {
   gap: 32px;
 }
 
-.libraryHeader {
-  max-width: 920px;
-}
-
-.libraryHeader h2 {
-  font-size: clamp(52px, 9vw, 128px);
-  font-weight: 300;
-  letter-spacing: 0;
-}
-
 .showLauncherGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
@@ -1310,10 +1300,6 @@ main {
 }
 
 @media (max-width: 620px) {
-  .libraryHeader h2 {
-    font-size: 54px;
-  }
-
   .showLauncherGrid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1538,7 +1524,6 @@ main {
   gap: 18px;
 }
 
-.libraryHeader,
 .dashboardHeader,
 .episodeShelfHeader {
   display: flex;
@@ -5044,7 +5029,6 @@ label:has(textarea:disabled) {
   .statusbar,
   .panelHeader,
   .editorBand,
-  .libraryHeader,
   .dashboardHeader,
   .episodeShelfHeader,
   .renderCommandBar {
@@ -5191,11 +5175,6 @@ body {
   min-height: calc(100vh - 150px);
   align-content: start;
   gap: 32px;
-}
-
-.libraryHeader h2 {
-  font-size: clamp(52px, 9vw, 128px);
-  font-weight: 300;
 }
 
 .showLauncherGrid {

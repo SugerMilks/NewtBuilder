@@ -713,13 +713,6 @@ function ShowLibrary({
 
   return (
     <section className="showLibraryView">
-      <div className="libraryHeader">
-        <div>
-          <span className="eyebrow">NewtBuilder</span>
-          <h2>Projects</h2>
-        </div>
-      </div>
-
       <div className="showLauncherGrid">
         <button className="showCreateTile" type="button" onClick={onCreateShow} disabled={busy} aria-label="Create new show">
           <Plus size={34} />
