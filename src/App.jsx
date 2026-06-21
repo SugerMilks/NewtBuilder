@@ -2303,7 +2303,8 @@ export default function App() {
     : [];
 
   return (
-    <div className={`appShell ${workspaceView ? "" : "noTabs"}`}>
+    <div className={`appShell ${workspaceView ? "" : "noTabs"} ${libraryView ? "libraryMode" : ""}`}>
+      {!libraryView ? (
       <header className="topbar">
         <div className="brandCluster">
           <div className="brandMark">
@@ -2361,6 +2362,7 @@ export default function App() {
           ) : null}
         </div>
       </header>
+      ) : null}
 
       <main>
         {libraryView && (
@@ -2849,12 +2851,14 @@ export default function App() {
         )}
       </main>
 
+      {!libraryView ? (
       <footer className="statusbar">
         <div className="statusText">
           {busy ? <RefreshCw className="spin" size={16} /> : <BadgeCheck size={16} />}
           <span>{status || "Ready."}</span>
         </div>
       </footer>
+      ) : null}
 
       {maskEditorLine && (
         <MaskEditorModal
