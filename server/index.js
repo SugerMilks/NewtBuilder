@@ -7109,24 +7109,23 @@ function targetSpeakerRoleForLine(line, imageAsset) {
 }
 
 function characterMaskContext({ line, character, show }) {
+  const characterProfile = (item) => {
+    if (!item) return "";
+    const headshot = normalizeCharacterHeadshot(item.headshot);
+    const details = [item.name, item.role, item.visualNotes]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .join(": ");
+    return details ? `${details}${headshot?.fileName ? ` (headshot: ${headshot.fileName})` : ""}` : "";
+  };
   const cast = Array.isArray(show?.characters)
     ? show.characters
-        .map((item) =>
-          [item.name, item.role, item.visualNotes]
-            .map((value) => String(value || "").trim())
-            .filter(Boolean)
-            .join(": ")
-        )
+        .map(characterProfile)
         .filter(Boolean)
         .join("\n")
     : "";
   return [
-    character
-      ? `Target character profile: ${[character.name, character.role, character.visualNotes]
-          .map((value) => String(value || "").trim())
-          .filter(Boolean)
-          .join(": ")}`
-      : "",
+    character ? `Target character profile: ${characterProfile(character)}` : "",
     cast ? `Cast profiles:\n${cast}` : "",
     line?.text ? `Dialogue line: ${line.text}` : ""
   ]
