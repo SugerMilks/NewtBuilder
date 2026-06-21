@@ -525,6 +525,19 @@ function friendlyDate(value) {
   return parsed.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function emptyClientPlan() {
+  return {
+    wordCount: 0,
+    estimatedSeconds: 0,
+    lengthStatus: "empty",
+    beatCount: 0,
+    beats: [],
+    lineCount: 0,
+    warnings: [],
+    suggestions: []
+  };
+}
+
 function episodeOutputsOfType(episode, type) {
   return (episode?.outputs || []).filter((output) => output.type === type);
 }
@@ -2073,6 +2086,20 @@ export default function App() {
     });
   }
 
+  function updateScriptDraft(value) {
+    setEpisodeDraft((prev) => {
+      if (!prev || prev.scriptText === value) return prev;
+      return {
+        ...structuredClone(prev),
+        scriptText: value,
+        plan: emptyClientPlan(),
+        productionMap: [],
+        productionMapEditedAt: "",
+        updatedAt: new Date().toISOString()
+      };
+    });
+  }
+
   function resetSetupApproval() {
     setEpisodeDraft((prev) => {
       if (!prev?.drafts?.workflow?.setupApproved) return prev;
@@ -2741,7 +2768,7 @@ export default function App() {
                   <textarea
                     className="scriptArea scriptNodeEditor"
                     value={scriptDraftText}
-                    onChange={(event) => updateEpisodeDraft(["scriptText"], event.target.value)}
+                    onChange={(event) => updateScriptDraft(event.target.value)}
                     placeholder="Paste or upload an episode script..."
                     disabled={!episodeDraft}
                   />

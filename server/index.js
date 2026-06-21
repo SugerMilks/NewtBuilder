@@ -458,6 +458,9 @@ app.post("/api/episodes/:id/script", upload.single("script"), async (req, res) =
   const updated = normalizeEpisode({
     ...current,
     scriptText,
+    productionMap: [],
+    productionMapEditedAt: "",
+    plan: emptyPlan(),
     assets: [
       ...current.assets,
       {
