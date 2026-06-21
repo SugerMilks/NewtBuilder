@@ -399,7 +399,7 @@ app.post("/api/episodes", async (req, res) => {
     scriptText: String(req.body.scriptText || ""),
     status: "draft",
     currentStage: "Planning",
-    format: show.shortFormat,
+    format: templateEpisode?.format || show.shortFormat,
     automation: show.automation,
     approvals: buildApprovals(show.automation),
     assets: inheritedAssets,
@@ -431,7 +431,7 @@ app.patch("/api/episodes/:id", async (req, res) => {
     id: current.id,
     showId: current.showId,
     createdAt: current.createdAt,
-    format: show.shortFormat || req.body.format || current.format,
+    format: req.body.format || current.format || show.shortFormat,
     updatedAt: new Date().toISOString()
   }), show);
   await writeEpisodes([updated, ...episodes.filter((item) => item.id !== updated.id)]);
@@ -667,7 +667,7 @@ app.post("/api/episodes/:id/build-plan", async (req, res) => {
   }
   const show = shows.find((item) => item.id === current.showId) || shows[0];
   const scriptText = String(req.body.scriptText ?? current.scriptText ?? "");
-  const format = normalizeShortFormat(req.body.format || show.shortFormat || current.format);
+  const format = normalizeShortFormat(req.body.format || current.format || show.shortFormat);
   const plan = analyzeScript(scriptText, show);
   const productionMap = createProductionMap({
     scriptText,
@@ -705,12 +705,13 @@ app.patch("/api/episodes/:id/production-map", async (req, res) => {
 
   const shows = await readShows();
   const show = shows.find((item) => item.id === current.showId) || shows[0];
+  const currentFormat = current.format || show.shortFormat;
   const updated = await ensureAutomaticSpeakerMasksForEpisode(normalizeEpisode({
     ...current,
-    format: show.shortFormat || current.format,
+    format: currentFormat,
     productionMap: normalizeProductionMapForFormat(
       Array.isArray(req.body.productionMap) ? req.body.productionMap : current.productionMap,
-      show.shortFormat || current.format
+      currentFormat
     ),
     productionMapEditedAt: String(req.body.productionMapEditedAt ?? current.productionMapEditedAt ?? ""),
     jobLog: appendLog(current.jobLog, "Production map saved."),
