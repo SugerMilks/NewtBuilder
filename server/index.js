@@ -2036,6 +2036,7 @@ function normalizeEpisode(episode) {
   const drafts = {
     ...emptyDrafts(defaultShow()),
     ...(episode.drafts || {}),
+    workflow: normalizeWorkflowDraft(episode, emptyDrafts(defaultShow()).workflow),
     finishingLayers: normalizeFinishingLayers(episode.drafts?.finishingLayers),
     assetNodeConnections: normalizeAssetNodeConnections(episode.drafts?.assetNodeConnections)
   };
@@ -2179,11 +2180,32 @@ function emptyDrafts(show) {
     thumbnails: [],
     finishingLayers: [],
     social: [],
+    workflow: {
+      setupApproved: false,
+      setupApprovedAt: ""
+    },
     assetNodeConnections: {
       character: false,
       visual: false,
       insert: false
     }
+  };
+}
+
+function normalizeWorkflowDraft(episode = {}, fallback = {}) {
+  const workflow = episode.drafts?.workflow && typeof episode.drafts.workflow === "object" ? episode.drafts.workflow : {};
+  const hasExplicitSetupApproval = Object.prototype.hasOwnProperty.call(workflow, "setupApproved");
+  const inferredApproved = Boolean(
+    (Array.isArray(episode.assets) && episode.assets.length) ||
+      String(episode.scriptText || "").trim() ||
+      (Array.isArray(episode.productionMap) && episode.productionMap.length) ||
+      (Array.isArray(episode.outputs) && episode.outputs.length)
+  );
+  return {
+    ...fallback,
+    ...workflow,
+    setupApproved: hasExplicitSetupApproval ? Boolean(workflow.setupApproved) : inferredApproved,
+    setupApprovedAt: workflow.setupApprovedAt || ""
   };
 }
 

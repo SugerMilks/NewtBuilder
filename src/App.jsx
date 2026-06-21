@@ -1238,6 +1238,47 @@ export default function App() {
     }
   }
 
+  async function approveSetup() {
+    if (!showDraft || !episodeDraft) return;
+    if (!setupComplete) {
+      setStatus("Complete the show, episode, format, model, and resolution fields before approving Setup.");
+      return;
+    }
+    const nextEpisode = structuredClone(episodeDraft);
+    nextEpisode.drafts = {
+      ...(nextEpisode.drafts || {}),
+      workflow: {
+        ...(nextEpisode.drafts?.workflow || {}),
+        setupApproved: true,
+        setupApprovedAt: new Date().toISOString()
+      }
+    };
+
+    setBusy(true);
+    try {
+      const show = await request(`/api/shows/${showDraft.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(showDraft)
+      });
+      const episode = await request(`/api/episodes/${nextEpisode.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(nextEpisode)
+      });
+      setShows((prev) => [show, ...prev.filter((item) => item.id !== show.id)]);
+      setShowDraft(structuredClone(show));
+      setEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
+      setAllEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
+      setActiveEpisodeId(episode.id);
+      setEpisodeDraft(structuredClone(episode));
+      setActiveTab("assets");
+      setStatus("Setup approved. Assets are unlocked.");
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function renameActiveShow() {
     return renameShow(activeShow);
   }
@@ -2211,7 +2252,34 @@ export default function App() {
     });
   }
 
+  function resetSetupApproval() {
+    setEpisodeDraft((prev) => {
+      if (!prev?.drafts?.workflow?.setupApproved) return prev;
+      const next = structuredClone(prev);
+      next.drafts = {
+        ...(next.drafts || {}),
+        workflow: {
+          ...(next.drafts?.workflow || {}),
+          setupApproved: false,
+          setupApprovedAt: ""
+        }
+      };
+      return next;
+    });
+  }
+
+  function updateSetupShowDraft(path, value) {
+    updateShowDraft(path, value);
+    resetSetupApproval();
+  }
+
+  function updateSetupEpisodeDraft(path, value) {
+    updateEpisodeDraft(path, value);
+    resetSetupApproval();
+  }
+
   function setShowAspect(aspectRatio) {
+    resetSetupApproval();
     setShowDraft((prev) => ({
       ...prev,
       shortFormat: {
@@ -2225,6 +2293,7 @@ export default function App() {
 
   function setShowResolutionMode(resolutionMode) {
     const nextMode = normalizeResolutionMode(resolutionMode);
+    resetSetupApproval();
     setShowDraft((prev) => ({
       ...prev,
       shortFormat: {
@@ -2296,6 +2365,7 @@ export default function App() {
   const drafts = episodeDraft?.id === activeEpisode?.id ? episodeDraft?.drafts || {} : activeEpisode?.drafts || {};
   const assetNodeConnections = normalizeAssetNodeConnections(drafts.assetNodeConnections);
   const coreAssetNodesConnected = Boolean(assetNodeConnections.character && assetNodeConnections.visual);
+  const setupApproved = Boolean(drafts.workflow?.setupApproved);
   const activeAutomation = showDraft?.automation || {};
   const socialConfig = showDraft?.platforms?.social || activeShow?.platforms?.social || {};
   const promotionTemplates = normalizePromotionTemplates(socialConfig.templates);
@@ -2379,8 +2449,9 @@ export default function App() {
       showDraft?.shortFormat?.resolution &&
       (showDraft?.production?.defaultLipSyncModel || "fabric")
   );
+  const setupReady = setupComplete && setupApproved;
   const assetsComplete = Boolean(
-    setupComplete &&
+    setupReady &&
       (showDraft?.characters || activeShow?.characters || []).length &&
       visualAssets.length &&
       coreAssetNodesConnected
@@ -2393,8 +2464,8 @@ export default function App() {
   const deliveryReady = Boolean(finalOutput?.localUrl || thumbnailOutputs.length);
   const workflowState = workflowSections.map((section) => {
     const state = {
-      setup: { enabled: true, complete: setupComplete, unlockHint: "creating a project" },
-      assets: { enabled: setupComplete, complete: assetsComplete, unlockHint: "Setup is complete" },
+      setup: { enabled: true, complete: setupReady, unlockHint: "creating a project" },
+      assets: { enabled: setupReady, complete: assetsComplete, unlockHint: "Setup is approved" },
       script: { enabled: assetsComplete, complete: scriptUploaded, unlockHint: "Assets are connected" },
       storyboard: { enabled: planBuilt, complete: planBuilt, unlockHint: "Script Build Plan finishes" },
       preview: { enabled: planBuilt, complete: previewReady, unlockHint: "Script Build Plan finishes" },
@@ -2552,10 +2623,19 @@ export default function App() {
                     <span className="eyebrow">Setup</span>
                     <h3>Show & Episode</h3>
                   </div>
-                  <button className="secondaryButton" onClick={saveShow} disabled={busy}>
-                    <Save size={17} />
-                    Save Setup
-                  </button>
+                  <div className="buttonRow">
+                    <Pill tone={setupApproved ? "good" : setupComplete ? "neutral" : "warn"}>
+                      {setupApproved ? "approved" : setupComplete ? "ready to approve" : "incomplete"}
+                    </Pill>
+                    <button className="secondaryButton" onClick={saveShow} disabled={busy}>
+                      <Save size={17} />
+                      Save Setup
+                    </button>
+                    <button className="primaryButton" onClick={approveSetup} disabled={!episodeDraft || !setupComplete || setupApproved || busy}>
+                      <Check size={17} />
+                      Approve Setup
+                    </button>
+                  </div>
                 </div>
                 <div className="setupEpisodeSwitcher">
                   <Field label="Current episode">
@@ -2583,12 +2663,12 @@ export default function App() {
                 </div>
                 <div className="identityCompactRow">
                   <Field label="Show name">
-                    <input value={showDraft.name} onChange={(event) => updateShowDraft(["name"], event.target.value)} />
+                    <input value={showDraft.name} onChange={(event) => updateSetupShowDraft(["name"], event.target.value)} />
                   </Field>
                   <Field label="Episode name">
                     <input
                       value={episodeDraft?.title || ""}
-                      onChange={(event) => updateEpisodeDraft(["title"], event.target.value)}
+                      onChange={(event) => updateSetupEpisodeDraft(["title"], event.target.value)}
                       placeholder="Create an episode to name it"
                       disabled={!episodeDraft}
                     />
@@ -2596,7 +2676,7 @@ export default function App() {
                   <Field label="Description">
                     <textarea
                       value={showDraft.description}
-                      onChange={(event) => updateShowDraft(["description"], event.target.value)}
+                      onChange={(event) => updateSetupShowDraft(["description"], event.target.value)}
                       rows={1}
                       placeholder="One sentence show description"
                     />
@@ -2615,7 +2695,7 @@ export default function App() {
                   <Field label="Lip-sync model">
                     <select
                       value={showDraft.production?.defaultLipSyncModel || "fabric"}
-                      onChange={(event) => updateShowDraft(["production", "defaultLipSyncModel"], event.target.value)}
+                      onChange={(event) => updateSetupShowDraft(["production", "defaultLipSyncModel"], event.target.value)}
                     >
                       <option value="fabric">Fabric</option>
                       <option value="kling">Kling</option>
@@ -2639,6 +2719,14 @@ export default function App() {
                     <Plus size={18} />
                     Create First Episode
                   </button>
+                ) : null}
+                {episodeDraft && !setupApproved ? (
+                  <div className="notice">
+                    <ChevronRight size={17} />
+                    {setupComplete
+                      ? "Approve Setup to unlock the Assets node."
+                      : "Complete every Setup field before approving this episode."}
+                  </div>
                 ) : null}
               </section>
             )}
