@@ -2421,7 +2421,13 @@ export default function App() {
             />
             <div className="projectCanvasStack">
 
-        {workspaceView && !activeWorkflowSection ? <div className="workflowBlankCanvas" aria-hidden="true" /> : null}
+        {workspaceView && !activeWorkflowSection ? (
+          <div className="workflowBlankCanvas" role="region" aria-label="Project canvas">
+            <p className="srOnly">
+              Select an enabled workflow section to start. Enabled sections: {workflowState.filter((section) => section.enabled).map((section) => section.label).join(", ")}.
+            </p>
+          </div>
+        ) : null}
 
         {workspaceView && ["setup", "assets", "script", "storyboard"].includes(activeWorkflowKey) && (
           <div className="studioGrid">
