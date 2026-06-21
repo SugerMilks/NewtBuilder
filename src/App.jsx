@@ -873,21 +873,6 @@ function WorkflowRail({ sections, activeSection, onSelect, statusItems = [] }) {
   );
 }
 
-function WorkflowCanvas({ section, children, meta = null }) {
-  return (
-    <section className={`workflowCanvas section-${section.key}`}>
-      <div className="workflowCanvasHeader">
-        <div>
-          <span className="eyebrow">Project Input</span>
-          <h2>{section.label}</h2>
-        </div>
-        {meta}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 function normalizeAssetNodeConnections(value = {}) {
   return assetNodeKeys.reduce((connections, key) => {
     connections[key] = Boolean(value?.[key]);

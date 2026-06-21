@@ -345,7 +345,6 @@ main {
   gap: 18px;
 }
 
-.workflowCanvas,
 .studioGrid,
 .approvalsView {
   min-width: 0;
