@@ -7,24 +7,24 @@ NewtBuilder is a local show-and-episode builder for animated episodes. It is des
 - Show profiles with reusable episode format and production settings
 - Show Library landing screen for opening saved shows or creating fresh ones
 - Show Dashboard with episode cards for reopening saved episode projects
-- Character voice cast setup using the same voice-list concept as Episode Builder
-- Episode workspace with script paste/upload and asset upload
+- Episode workspace with a side-rail workflow: Setup, Assets, Script, Storyboard, Preview, Composite, and Delivery
+- Node-style Assets canvas for cast, visual frame, and insert frame inputs connected into the episode INPUT node
+- Character cast setup with ElevenLabs voices, headshots, and visual notes
 - PDF, TXT, and Markdown script upload
-- Shot image library with role buckets for character one-shots, medium two-shots, wide shots, and insert shots
-- 9:16 vertical and 16:9 landscape format selection
+- Storyboard grid with draggable frame cards, add-shot menus, double-click shot editors, voice controls, insert trims, and mask editing
+- 16:9, 9:16, and 21:9 format selection
 - Runtime and word-count analysis
 - Beat planning from script text
-- Automation toggles per show
-- In-app approval gates
-- YouTube metadata, package export, private draft upload, and draft status checks
-- Optional Finishing Layers pass for simple post-render graphics, alpha/video overlays, and extra audio
+- Preview build, audio rebuild, final render, and Composite finishing layers
+- AI thumbnail generation for selected delivery formats
+- YouTube metadata, package export, private draft upload, draft status checks, and multi-platform delivery prep
 - YouTube-only promotion prep with reusable Community/pinned-comment templates and promotion packet export
 - Local JSON storage in `server/data`
 
 ## Episode Format Defaults
 
-- Aspect ratio: `9:16`
-- Resolution: `1080x1920`
+- Aspect ratio: `16:9`, `9:16`, or `21:9`
+- Resolution: High Definition (`1080p`) or Standard (`720p`)
 - Runtime: estimated from script word count and show WPM settings
 - Runtime is informational only; the app does not lock episodes to a micro-video length.
 - Container: `mp4`
@@ -44,9 +44,9 @@ Open `http://127.0.0.1:5174`.
 
 ## Project Structure
 
-- `Show`: the reusable project container for identity, cast, visual setup, defaults, automation, YouTube settings, and templates.
+- `Show`: the reusable project container for identity, cast, visual setup, defaults, YouTube settings, and templates.
 - `Episode`: a saved production inside a show, including script, production map, masks, generated media, finishing layers, thumbnails, and YouTube draft status.
-- The app opens to the Show Library. Open a show to see its saved episodes, then open an episode to enter Studio and Approvals.
+- The app opens to the Show Library. Open a show to see its saved episodes, then open an episode to enter the workflow workspace.
 
 ## YouTube Draft Upload
 
@@ -78,13 +78,13 @@ Keep `NEWTBUILDER_ENABLE_PUBLISHING` unset or `false` while testing locally. The
 
 ## Finishing Layers
 
-After `Render Final`, Approvals includes an optional Finishing Layers panel. Use it for small final-pass additions without reopening the episode build:
+After the Preview section renders a final video, the Composite section opens the Finishing Layers panel for small final-pass additions without reopening the episode build:
 
 - Add image overlays, transparent video/alpha-style graphic clips, or audio layers.
 - Set start time, duration, opacity, position, size, volume, and simple audio fades.
 - Use the compact layer timeline to preview layer placement, scrub the playhead, move clips, duplicate layers, and trim in/out points with the yellow edge handles.
 - Video layers remember their original source duration. If a video layer is extended before the source starts or after the source ends, the extension is shown as a held-frame region and exports as a cloned first/last frame.
-- Export Finished Master to create a new master file while preserving the original final render.
+- Click `Final Render` to create a new finished master file while preserving the original final render.
 - Thumbnail generation, package export, and YouTube private draft upload prefer the finished master when one exists.
 
 ## YouTube Promotion Prep
