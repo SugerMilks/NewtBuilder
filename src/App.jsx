@@ -3454,6 +3454,9 @@ function normalizeThumbnailFormats(formats = [], fallbackAspect = "16:9") {
 
 function defaultDeliveryPlatforms({ youtubeDraft = {}, deliveryDraft = {}, socialConfig = {} }) {
   const savedPlatforms = deliveryDraft.platforms && typeof deliveryDraft.platforms === "object" ? deliveryDraft.platforms : {};
+  const defaultTitle = youtubeDraft.title || socialConfig.showName || "";
+  const defaultDescription = youtubeDraft.description || socialConfig.cta || "";
+  const defaultHashtags = socialConfig.hashtags || "";
   return Object.fromEntries(
     deliveryPlatformOptions.map((platform) => {
       const saved = savedPlatforms[platform.key] || {};
@@ -3462,9 +3465,9 @@ function defaultDeliveryPlatforms({ youtubeDraft = {}, deliveryDraft = {}, socia
         platform.key,
         {
           enabled: saved.enabled ?? isYoutube,
-          title: saved.title || (isYoutube ? youtubeDraft.title || "" : ""),
-          description: saved.description || (isYoutube ? youtubeDraft.description || "" : ""),
-          hashtags: saved.hashtags || socialConfig.hashtags || "",
+          title: saved.title || defaultTitle,
+          description: saved.description || defaultDescription,
+          hashtags: saved.hashtags || defaultHashtags,
           privacy: saved.privacy || (isYoutube ? "private draft" : platform.defaultPrivacy),
           notes: saved.notes || ""
         }
@@ -5183,7 +5186,7 @@ function FinalPackagePanel({
   useEffect(() => {
     const nextDelivery = JSON.parse(deliveryDraftKey || "{}");
     setPlatformForm(defaultDeliveryPlatforms({ youtubeDraft, deliveryDraft: nextDelivery, socialConfig }));
-  }, [deliveryDraftKey, youtubeDraftKey, socialConfig.hashtags]);
+  }, [deliveryDraftKey, youtubeDraftKey, socialConfig.cta, socialConfig.hashtags, socialConfig.showName]);
 
   function updateYoutubeForm(key, value) {
     setYoutubeForm((prev) => ({
@@ -5713,6 +5716,7 @@ function FinalPackagePanel({
                     />
                     <span>{platform.label}</span>
                     <Pill tone={draft.enabled ? "good" : "neutral"}>{draft.enabled ? "selected" : "manual"}</Pill>
+                    <ChevronRight size={16} className={`platformChevron ${draft.enabled ? "open" : ""}`} aria-hidden="true" />
                   </label>
                   {draft.enabled ? (
                     <div className="platformDetails">
