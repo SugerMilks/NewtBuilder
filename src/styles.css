@@ -1238,6 +1238,60 @@ main {
   margin-bottom: 14px;
 }
 
+.storyboardEditorPreview {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.92fr) minmax(220px, 0.55fr);
+  gap: 14px;
+  align-items: stretch;
+  margin-bottom: 14px;
+}
+
+.storyboardEditorMedia {
+  position: relative;
+  aspect-ratio: var(--storyboard-frame-aspect, 16 / 9);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at center, rgba(216, 198, 255, 0.18), transparent 40%),
+    rgba(255, 255, 255, 0.04);
+}
+
+.storyboardEditorMedia img,
+.storyboardEditorMedia video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.storyboardEditorPreviewMeta {
+  display: grid;
+  align-content: end;
+  gap: 6px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.storyboardEditorPreviewMeta span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.storyboardEditorPreviewMeta strong {
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .storyboardEditorPanel .productionLine {
   min-height: auto;
   border-radius: 22px;
@@ -1395,6 +1449,7 @@ main {
   .nodeUploadComposer,
   .nodeUploadComposer.insertComposer,
   .scriptNodeFooter,
+  .storyboardEditorPreview,
   .productionStoryboardGrid,
   .deliveryFormatSelector,
   .deliveryPlatformsGrid,

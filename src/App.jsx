@@ -5801,38 +5801,58 @@ function ProductionMapPanel({
     const isInsert = line.lineType === "insert";
     const selectedAsset = visualAssets.find((asset) => asset.id === line.assetId);
     const selectedMask = maskAssets.find((asset) => asset.id === line.maskAssetId);
+    const previewVideoUrl = isInsert ? line.videoTake?.proxyLocalUrl || line.videoTake?.localUrl || "" : "";
     return (
-      <ProductionLineRow
-        key={line.id}
-        line={line}
-        isInsert={isInsert}
-        selectedAsset={selectedAsset}
-        selectedMask={selectedMask}
-        isSelected
-        isDragging={false}
-        dropPlacement=""
-        reviewStatus={reviewStatusForLine(line)}
-        characters={characters}
-        voices={voices}
-        shotTypes={shotTypes}
-        assetsForLine={assetsForLine}
-        busy={busy}
-        busyAction={busyAction}
-        onSelect={selectRow}
-        onDragStart={() => {}}
-        onDragOver={() => {}}
-        onDrop={() => {}}
-        onClearDrop={() => {}}
-        onUpdate={onUpdate}
-        onSetCharacter={onSetCharacter}
-        onUpdateShotRole={updateShotRole}
-        onRegenerateAudio={onRegenerateAudio}
-        onSetAudioStatus={onSetAudioStatus}
-        onOpenMaskEditor={onOpenMaskEditor}
-        onGenerateInsertVideo={onGenerateInsertVideo}
-        onUploadInsertVideo={onUploadInsertVideo}
-        onDragEnd={() => {}}
-      />
+      <>
+        <div className="storyboardEditorPreview">
+          <div className="storyboardEditorMedia" style={{ "--storyboard-frame-aspect": cssAspectRatio(aspectRatio || "16:9") }}>
+            {previewVideoUrl ? (
+              <video src={previewVideoUrl} controls playsInline preload="metadata" />
+            ) : selectedAsset?.localUrl ? (
+              <img src={selectedAsset.localUrl} alt={selectedAsset.fileName || ""} />
+            ) : (
+              <div className="storyboardFrameEmpty">
+                <Image size={32} />
+              </div>
+            )}
+          </div>
+          <div className="storyboardEditorPreviewMeta">
+            <span>{isInsert ? "Insert preview" : "Shot thumbnail"}</span>
+            <strong>{selectedAsset?.fileName || (previewVideoUrl ? "Generated insert clip" : "No frame selected")}</strong>
+          </div>
+        </div>
+        <ProductionLineRow
+          key={line.id}
+          line={line}
+          isInsert={isInsert}
+          selectedAsset={selectedAsset}
+          selectedMask={selectedMask}
+          isSelected
+          isDragging={false}
+          dropPlacement=""
+          reviewStatus={reviewStatusForLine(line)}
+          characters={characters}
+          voices={voices}
+          shotTypes={shotTypes}
+          assetsForLine={assetsForLine}
+          busy={busy}
+          busyAction={busyAction}
+          onSelect={selectRow}
+          onDragStart={() => {}}
+          onDragOver={() => {}}
+          onDrop={() => {}}
+          onClearDrop={() => {}}
+          onUpdate={onUpdate}
+          onSetCharacter={onSetCharacter}
+          onUpdateShotRole={updateShotRole}
+          onRegenerateAudio={onRegenerateAudio}
+          onSetAudioStatus={onSetAudioStatus}
+          onOpenMaskEditor={onOpenMaskEditor}
+          onGenerateInsertVideo={onGenerateInsertVideo}
+          onUploadInsertVideo={onUploadInsertVideo}
+          onDragEnd={() => {}}
+        />
+      </>
     );
   }
 
