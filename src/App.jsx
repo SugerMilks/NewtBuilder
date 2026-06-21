@@ -2327,6 +2327,10 @@ export default function App() {
   );
   const scriptDraftText = episodeDraft?.scriptText || activeEpisode?.scriptText || "";
   const liveScriptMetrics = scriptMetrics(scriptDraftText, showDraft?.shortFormat?.wordsPerMinute || activeShow?.shortFormat?.wordsPerMinute || 145);
+  const castMembers = showDraft?.characters || activeShow?.characters || [];
+  const castReady = castMembers.some(
+    (character) => String(character?.name || "").trim() && String(character?.voiceId || "").trim()
+  );
   const setupComplete = Boolean(
     activeShow &&
       showDraft?.name?.trim() &&
@@ -2339,7 +2343,7 @@ export default function App() {
   const setupReady = setupComplete && setupApproved;
   const assetsComplete = Boolean(
     setupReady &&
-      (showDraft?.characters || activeShow?.characters || []).length &&
+      castReady &&
       visualAssets.length &&
       coreAssetNodesConnected
   );
@@ -2354,7 +2358,7 @@ export default function App() {
     const state = {
       setup: { enabled: true, complete: setupReady, unlockHint: "creating a project" },
       assets: { enabled: setupReady, complete: assetsComplete, unlockHint: "Setup is approved" },
-      script: { enabled: assetsComplete, complete: scriptUploaded, unlockHint: "Assets are connected" },
+      script: { enabled: assetsComplete, complete: scriptUploaded, unlockHint: "Assets include a voiced cast and connected visuals" },
       storyboard: { enabled: planBuilt, complete: planBuilt, unlockHint: "Script Build Plan finishes" },
       preview: { enabled: planBuilt, complete: previewReady, unlockHint: "Script Build Plan finishes" },
       composite: { enabled: renderReady, complete: compositeReady, unlockHint: "Preview renders final video" },
@@ -2637,6 +2641,9 @@ export default function App() {
                   <div className="buttonRow">
                     <Pill tone={voicesSource === "elevenlabs" ? "good" : "warn"}>
                       {voicesSource === "elevenlabs" ? "ElevenLabs" : "Demo voices"}
+                    </Pill>
+                    <Pill tone={castReady ? "good" : "warn"}>
+                      {castReady ? "Cast ready" : "Add voice"}
                     </Pill>
                     <Pill tone={(activeEpisode?.assets || []).some((asset) => asset.type === "image") ? "good" : "neutral"}>
                       {(activeEpisode?.assets || []).filter((asset) => asset.type === "image").length} images
