@@ -5221,7 +5221,7 @@ function youtubePackageText(metadata) {
     `Description ready: ${metadata.youtube.handoffChecklist.descriptionReady ? "yes" : "no"}`,
     `Thumbnail ready: ${metadata.youtube.handoffChecklist.thumbnailReady ? "yes" : "no"}`,
     `Studio checked: ${metadata.youtube.handoffChecklist.studioChecked ? "yes" : "no"}`,
-    `Approval ready: ${metadata.youtube.handoffChecklist.approvalReady ? "yes" : "no"}`,
+    `Ready to publish: ${metadata.youtube.handoffChecklist.approvalReady ? "yes" : "no"}`,
     `Scheduled/published manually: ${metadata.youtube.handoffChecklist.scheduledManually ? "yes" : "no"}`,
     "",
     "Community post draft:",

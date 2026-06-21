@@ -201,7 +201,7 @@ const youtubeHandoffChecks = [
   ["descriptionReady", "Description ready"],
   ["thumbnailReady", "Thumbnail ready"],
   ["studioChecked", "Studio checked"],
-  ["approvalReady", "Approval ready"],
+  ["approvalReady", "Ready to publish"],
   ["scheduledManually", "Scheduled/published manually"]
 ];
 
