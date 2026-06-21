@@ -135,6 +135,8 @@ const shotAssetTypes = [
   }
 ];
 
+const visualFrameRoles = new Set(["character_one_shot", "medium_two_shot", "wide_shot"]);
+
 const workflowSections = [
   { key: "setup", label: "Setup", icon: Settings2 },
   { key: "assets", label: "Assets", icon: Image },
@@ -2378,6 +2380,10 @@ export default function App() {
     () => episodeAssets.filter((asset) => asset.type === "image" && asset.shotRole !== "mask"),
     [episodeAssets]
   );
+  const visualFrameAssets = useMemo(
+    () => episodeAssets.filter((asset) => asset.type === "image" && visualFrameRoles.has(asset.shotRole)),
+    [episodeAssets]
+  );
   const maskAssets = useMemo(
     () => episodeAssets.filter((asset) => asset.type === "image" && asset.shotRole === "mask"),
     [episodeAssets]
@@ -2401,7 +2407,7 @@ export default function App() {
   const assetsComplete = Boolean(
     setupReady &&
       castReady &&
-      visualAssets.length &&
+      visualFrameAssets.length &&
       coreAssetNodesConnected
   );
   const scriptUploaded = Boolean((episodeDraft?.scriptText || activeEpisode?.scriptText || "").trim());
@@ -2711,8 +2717,8 @@ export default function App() {
                     <Pill tone={castReady ? "good" : "warn"}>
                       {castReady ? "Cast ready" : "Add voice"}
                     </Pill>
-                    <Pill tone={episodeAssets.some((asset) => asset.type === "image") ? "good" : "neutral"}>
-                      {episodeAssets.filter((asset) => asset.type === "image").length} images
+                    <Pill tone={visualFrameAssets.length ? "good" : "neutral"}>
+                      {visualFrameAssets.length} frames
                     </Pill>
                     <Pill tone={coreAssetNodesConnected ? "good" : "warn"}>
                       {coreAssetNodesConnected ? "INPUT linked" : "Link nodes"}
