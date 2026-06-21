@@ -1279,7 +1279,10 @@ export default function App() {
     try {
       const episode = await request(`/api/episodes/${episodeDraft.id}/build-plan`, {
         method: "POST",
-        body: JSON.stringify({ scriptText: episodeDraft.scriptText, format: activeShow?.shortFormat || episodeDraft.format })
+        body: JSON.stringify({
+          scriptText: episodeDraft.scriptText,
+          format: episodeDraft.format || showDraft?.shortFormat || activeShow?.shortFormat
+        })
       });
       setEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
       setActiveEpisodeId(episode.id);
@@ -2213,7 +2216,7 @@ export default function App() {
   const integrations = health?.integrations || {};
   const safety = health?.safety || { publishingEnabled: false, mode: "local-test-only" };
   const youtubeAuth = health?.youtube || {};
-  const selectedFormat = activeShow?.shortFormat || episodeDraft?.format || {};
+  const selectedFormat = episodeDraft?.format || activeEpisode?.format || showDraft?.shortFormat || activeShow?.shortFormat || {};
   const plan = episodeDraft?.plan || activeEpisode?.plan || {};
   const drafts = episodeDraft?.id === activeEpisode?.id ? episodeDraft?.drafts || {} : activeEpisode?.drafts || {};
   const assetNodeConnections = normalizeAssetNodeConnections(drafts.assetNodeConnections);
