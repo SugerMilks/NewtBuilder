@@ -840,29 +840,42 @@ function ShowDashboard({
   );
 }
 
-function WorkflowRail({ sections, activeSection, onSelect }) {
+function WorkflowRail({ sections, activeSection, onSelect, statusItems = [] }) {
   return (
     <aside className="workflowRail" aria-label="Project workflow">
       <div className="workflowRailCurve" />
-      {sections.map((section) => {
-        const Icon = section.icon;
-        const active = section.key === activeSection;
-        return (
-          <button
-            key={section.key}
-            type="button"
-            className={`workflowStep ${active ? "active" : ""} ${section.enabled ? "" : "locked"} ${section.complete ? "complete" : ""}`}
-            disabled={!section.enabled}
-            onClick={() => onSelect(section.key)}
-            title={section.enabled ? section.label : `${section.label} unlocks after ${section.unlockHint}`}
-          >
-            <span className="workflowDot">
-              {section.complete ? <Check size={13} /> : <Icon size={16} />}
-            </span>
-            <span className="workflowLabel">{section.label}</span>
-          </button>
-        );
-      })}
+      <div className="workflowSteps">
+        {sections.map((section) => {
+          const Icon = section.icon;
+          const active = section.key === activeSection;
+          return (
+            <button
+              key={section.key}
+              type="button"
+              className={`workflowStep ${active ? "active" : ""} ${section.enabled ? "" : "locked"} ${section.complete ? "complete" : ""}`}
+              disabled={!section.enabled}
+              onClick={() => onSelect(section.key)}
+              title={section.enabled ? section.label : `${section.label} unlocks after ${section.unlockHint}`}
+            >
+              <span className="workflowDot">
+                {section.complete ? <Check size={13} /> : <Icon size={16} />}
+              </span>
+              <span className="workflowLabel">{section.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      {statusItems.length ? (
+        <div className="workflowRailStatus" aria-label="Episode status">
+          {statusItems.map(({ icon: Icon, label, value }) => (
+            <article key={label} className="workflowRailMetric">
+              <Icon size={14} />
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </div>
+      ) : null}
     </aside>
   );
 }
@@ -1391,34 +1404,6 @@ export default function App() {
     if (episodeDraft) return episodeDraft;
     if (activeEpisode) return activeEpisode;
     return createEpisodeForShow(activeShow);
-  }
-
-  async function saveStudioAndReview() {
-    const draft = episodeDraft || activeEpisode;
-    if (!draft) return;
-    setBusy(true);
-    try {
-      if (showDraft) {
-        const show = await request(`/api/shows/${showDraft.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(showDraft)
-        });
-        setShows((prev) => [show, ...prev.filter((item) => item.id !== show.id)]);
-        setShowDraft(structuredClone(show));
-      }
-      const episode = await request(`/api/episodes/${draft.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(draft)
-      });
-      setEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
-      setActiveEpisodeId(episode.id);
-      setEpisodeDraft(structuredClone(episode));
-      setStatus("Episode saved.");
-    } catch (error) {
-      setStatus(error.message);
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function buildPlan() {
@@ -2507,6 +2492,13 @@ export default function App() {
     : showDashboardView
       ? "Episodes"
       : `${activeWorkflowSection?.label || "Setup"}${activeEpisode?.title ? ` / ${activeEpisode.title}` : ""}`;
+  const workflowRailStatus = workspaceView
+    ? [
+        { icon: Gauge, label: "Format", value: selectedFormat.resolution || selectedFormat.aspectRatio || "Not set" },
+        { icon: FileText, label: "Script", value: `${plan.wordCount || 0} words` },
+        { icon: Play, label: "Estimate", value: formatSeconds(plan.estimatedSeconds) }
+      ]
+    : [];
 
   return (
     <div className={`appShell ${workspaceView ? "" : "noTabs"}`}>
@@ -2605,22 +2597,9 @@ export default function App() {
               sections={workflowState}
               activeSection={activeWorkflowSection.key}
               onSelect={selectWorkflowSection}
+              statusItems={workflowRailStatus}
             />
             <div className="projectCanvasStack">
-
-        {workspaceView && (
-          <section className="overviewBand studioActionBand">
-            <button className="primaryButton saveAllButton" onClick={saveStudioAndReview} disabled={!episodeDraft || busy}>
-              <Save size={18} />
-              Save Episode
-            </button>
-            <div className="metrics">
-              <Metric icon={Gauge} label="Format" value={selectedFormat.resolution || selectedFormat.aspectRatio || "Not set"} />
-              <Metric icon={FileText} label="Script" value={`${plan.wordCount || 0} words`} />
-              <Metric icon={Play} label="Estimate" value={formatSeconds(plan.estimatedSeconds)} />
-            </div>
-          </section>
-        )}
 
         {workspaceView && ["setup", "assets", "script", "storyboard"].includes(activeWorkflowSection.key) && (
           <div className="studioGrid">
