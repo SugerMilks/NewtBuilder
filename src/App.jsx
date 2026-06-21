@@ -211,9 +211,38 @@ const shotAssetTypes = [
   }
 ];
 
-const targetTabs = [
-  { key: "studio", label: "Studio", icon: Clapperboard },
-  { key: "approvals", label: "Approvals", icon: ListChecks }
+const workflowSections = [
+  { key: "setup", label: "Setup", icon: Settings2 },
+  { key: "assets", label: "Assets", icon: Image },
+  { key: "script", label: "Script", icon: FileText },
+  { key: "storyboard", label: "Storyboard", icon: Clapperboard },
+  { key: "preview", label: "Preview", icon: Play },
+  { key: "composite", label: "Composite", icon: Film },
+  { key: "delivery", label: "Delivery", icon: MonitorUp }
+];
+
+const formatOptions = [
+  {
+    aspectRatio: "16:9",
+    label: "16:9",
+    detail: "Landscape",
+    high: "1920x1080",
+    standard: "1280x720"
+  },
+  {
+    aspectRatio: "9:16",
+    label: "9:16",
+    detail: "Vertical",
+    high: "1080x1920",
+    standard: "720x1280"
+  },
+  {
+    aspectRatio: "21:9",
+    label: "21:9",
+    detail: "Cinematic",
+    high: "2560x1080",
+    standard: "1680x720"
+  }
 ];
 
 const youtubeHandoffDefaults = {
@@ -257,6 +286,19 @@ function firstDescriptionLine(description) {
       .map((line) => line.trim())
       .find(Boolean) || "A new episode is ready to watch."
   );
+}
+
+function formatOptionForAspect(aspectRatio) {
+  return formatOptions.find((option) => option.aspectRatio === aspectRatio) || formatOptions[0];
+}
+
+function resolutionForFormat(aspectRatio, resolutionMode = "high") {
+  const option = formatOptionForAspect(aspectRatio);
+  return resolutionMode === "standard" ? option.standard : option.high;
+}
+
+function normalizeResolutionMode(value) {
+  return value === "standard" ? "standard" : "high";
 }
 
 function normalizePromotionTemplates(templates = {}) {
@@ -636,8 +678,7 @@ function ShowLibrary({
   activeShowId,
   busy,
   onOpenShow,
-  onRenameShow,
-  onDeleteShow
+  onCreateShow
 }) {
   const episodesByShow = useMemo(() => {
     const groups = new Map();
@@ -653,50 +694,26 @@ function ShowLibrary({
     <section className="showLibraryView">
       <div className="libraryHeader">
         <div>
-          <span className="eyebrow">Show Library</span>
-          <h2>NewtBuilder Shows</h2>
+          <span className="eyebrow">NewtBuilder</span>
+          <h2>Projects</h2>
         </div>
       </div>
 
-      <div className="showCardGrid">
+      <div className="showLauncherGrid">
+        <button className="showCreateTile" type="button" onClick={onCreateShow} disabled={busy} aria-label="Create new show">
+          <Plus size={34} />
+        </button>
         {shows.map((show) => {
           const showEpisodes = episodesByShow.get(show.id) || [];
           const previewImage = showPreviewImage(showEpisodes);
-          const latestEpisodeTime = newestTimestamp(showEpisodes);
-          const showTime = Date.parse(show.updatedAt || show.createdAt || "");
-          const updatedAt = latestEpisodeTime
-            ? new Date(Math.max(latestEpisodeTime, Number.isFinite(showTime) ? showTime : 0)).toISOString()
-            : show.updatedAt || show.createdAt;
           return (
-            <article className={`showCard ${show.id === activeShowId ? "active" : ""}`} key={show.id}>
-              <button className="showCardPreview" type="button" onClick={() => onOpenShow(show.id)} disabled={busy}>
-                {previewImage ? <img src={previewImage} alt="" /> : <Clapperboard size={34} />}
+            <article className={`showLaunchCard ${show.id === activeShowId ? "active" : ""}`} key={show.id}>
+              <button className="showLaunchButton" type="button" onClick={() => onOpenShow(show.id)} disabled={busy}>
+                <span className="showLaunchThumb">
+                  {previewImage ? <img src={previewImage} alt="" /> : <Clapperboard size={36} />}
+                </span>
+                <strong>{show.name}</strong>
               </button>
-              <div className="showCardBody">
-                <div className="showCardTitleRow">
-                  <div>
-                    <h3>{show.name}</h3>
-                    <span>{showEpisodes.length} episode{showEpisodes.length === 1 ? "" : "s"}</span>
-                  </div>
-                  <Pill tone={show.id === activeShowId ? "good" : "neutral"}>{show.id === activeShowId ? "active" : "saved"}</Pill>
-                </div>
-                <p>{show.description || "No description yet."}</p>
-                <div className="showCardMeta">
-                  <span>{show.shortFormat?.resolution || show.shortFormat?.aspectRatio || "Format unset"}</span>
-                  <span>Updated {friendlyDate(updatedAt)}</span>
-                </div>
-                <div className="buttonRow">
-                  <button className="primaryButton" type="button" onClick={() => onOpenShow(show.id)} disabled={busy}>
-                    Open Show
-                  </button>
-                  <button className="iconButton" type="button" onClick={() => onRenameShow(show)} disabled={busy} title="Rename show">
-                    <Pencil size={16} />
-                  </button>
-                  <button className="iconButton dangerIcon" type="button" onClick={() => onDeleteShow(show)} disabled={busy} title="Delete show">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
             </article>
           );
         })}
@@ -802,6 +819,91 @@ function ShowDashboard({
   );
 }
 
+function WorkflowRail({ sections, activeSection, onSelect }) {
+  return (
+    <aside className="workflowRail" aria-label="Project workflow">
+      <div className="workflowRailCurve" />
+      {sections.map((section) => {
+        const Icon = section.icon;
+        const active = section.key === activeSection;
+        return (
+          <button
+            key={section.key}
+            type="button"
+            className={`workflowStep ${active ? "active" : ""} ${section.enabled ? "" : "locked"} ${section.complete ? "complete" : ""}`}
+            disabled={!section.enabled}
+            onClick={() => onSelect(section.key)}
+            title={section.enabled ? section.label : `${section.label} unlocks after ${section.unlockHint}`}
+          >
+            <span className="workflowDot">
+              {section.complete ? <Check size={13} /> : <Icon size={16} />}
+            </span>
+            <span className="workflowLabel">{section.label}</span>
+          </button>
+        );
+      })}
+    </aside>
+  );
+}
+
+function WorkflowCanvas({ section, children, meta = null }) {
+  return (
+    <section className={`workflowCanvas section-${section.key}`}>
+      <div className="workflowCanvasHeader">
+        <div>
+          <span className="eyebrow">Project Input</span>
+          <h2>{section.label}</h2>
+        </div>
+        {meta}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function AssetNodeCanvas({ children, onAddCharacter }) {
+  const [menu, setMenu] = useState(null);
+
+  function openMenu(event) {
+    event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMenu({
+      x: Math.min(event.clientX - rect.left, Math.max(12, rect.width - 190)),
+      y: Math.min(event.clientY - rect.top, Math.max(12, rect.height - 150))
+    });
+  }
+
+  return (
+    <div className="assetNodeCanvas" onContextMenu={openMenu} onClick={() => setMenu(null)}>
+      <div className="assetNodeConnectors" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="assetNodeBoard">
+        {children}
+      </div>
+      <article className="assetInputNode">
+        <span className="nodePort input" />
+        <strong>INPUT</strong>
+      </article>
+      {menu ? (
+        <div className="assetContextMenu" style={{ left: menu.x, top: menu.y }} onClick={(event) => event.stopPropagation()}>
+          <button type="button" onClick={() => { onAddCharacter?.(); setMenu(null); }}>
+            Character node
+          </button>
+          <button type="button" onClick={() => setMenu(null)}>
+            Visual Frame node
+          </button>
+          <button type="button" onClick={() => setMenu(null)}>
+            Insert Frame node
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function App() {
   const [health, setHealth] = useState(null);
   const [shows, setShows] = useState([]);
@@ -810,7 +912,7 @@ export default function App() {
   const [activeShowId, setActiveShowId] = useState("");
   const [activeEpisodeId, setActiveEpisodeId] = useState("");
   const [appView, setAppView] = useState("library");
-  const [activeTab, setActiveTab] = useState("studio");
+  const [activeTab, setActiveTab] = useState("setup");
   const [busy, setBusy] = useState(false);
   const [busyAction, setBusyAction] = useState("");
   const [status, setStatus] = useState("");
@@ -996,33 +1098,33 @@ export default function App() {
   async function openShow(showId) {
     if (!showId) return;
     setActiveShowId(showId);
-    setAppView("show");
-    setActiveTab("studio");
+    setAppView("episode");
+    setActiveTab("setup");
     await reloadEpisodes(showId);
   }
 
   function openEpisode(episodeId) {
     if (!episodeId) return;
     setActiveEpisodeId(episodeId);
-    setActiveTab("studio");
+    setActiveTab("setup");
     setAppView("episode");
   }
 
   function openEpisodeReview(episodeId) {
     if (!episodeId) return;
     setActiveEpisodeId(episodeId);
-    setActiveTab("approvals");
+    setActiveTab("preview");
     setAppView("episode");
   }
 
   function openShowDashboard() {
-    setAppView("show");
-    setActiveTab("studio");
+    setAppView("episode");
+    setActiveTab("setup");
   }
 
   function openShowSettings() {
     setAppView("episode");
-    setActiveTab("settings");
+    setActiveTab("setup");
   }
 
   async function reloadEpisodes(showId = activeShowId) {
@@ -1048,6 +1150,11 @@ export default function App() {
             thumbnailStyle: "bold expression, clean background, high contrast",
             defaultCta: "Follow for the next episode.",
             recurringHashtags: ["#animatedseries", "#episode"]
+          },
+          production: {
+            defaultLipSyncModel: "fabric",
+            defaultInsertTrimSeconds: INSERT_TRIM_DEFAULT_SECONDS,
+            defaultExpressiveBodyMotion: false
           }
         })
       });
@@ -1140,7 +1247,7 @@ export default function App() {
     try {
       await createEpisodeForShow(activeShow);
       setAppView("episode");
-      setActiveTab("studio");
+      setActiveTab("setup");
       setStatus("Episode created.");
     } catch (error) {
       setStatus(error.message);
@@ -1974,25 +2081,37 @@ export default function App() {
   }
 
   function setShowAspect(aspectRatio) {
-    const resolution = aspectRatio === "16:9" ? "1920x1080" : "1080x1920";
     setShowDraft((prev) => ({
       ...prev,
       shortFormat: {
         ...prev.shortFormat,
+        resolutionMode: normalizeResolutionMode(prev.shortFormat?.resolutionMode),
         aspectRatio,
-        resolution
+        resolution: resolutionForFormat(aspectRatio, prev.shortFormat?.resolutionMode)
+      }
+    }));
+  }
+
+  function setShowResolutionMode(resolutionMode) {
+    const nextMode = normalizeResolutionMode(resolutionMode);
+    setShowDraft((prev) => ({
+      ...prev,
+      shortFormat: {
+        ...prev.shortFormat,
+        resolutionMode: nextMode,
+        resolution: resolutionForFormat(prev.shortFormat?.aspectRatio, nextMode)
       }
     }));
   }
 
   function setEpisodeAspect(aspectRatio) {
-    const resolution = aspectRatio === "16:9" ? "1920x1080" : "1080x1920";
     setEpisodeDraft((prev) => ({
       ...prev,
       format: {
         ...prev.format,
+        resolutionMode: normalizeResolutionMode(prev.format?.resolutionMode),
         aspectRatio,
-        resolution
+        resolution: resolutionForFormat(aspectRatio, prev.format?.resolutionMode)
       }
     }));
   }
@@ -2115,6 +2234,46 @@ export default function App() {
     () => (activeEpisode?.assets || []).filter((asset) => asset.type === "image" && asset.shotRole === "mask"),
     [activeEpisode]
   );
+  const setupComplete = Boolean(
+    activeShow &&
+      showDraft?.name?.trim() &&
+      showDraft?.description?.trim() &&
+      (episodeDraft?.title?.trim() || activeEpisode?.title?.trim()) &&
+      showDraft?.shortFormat?.aspectRatio &&
+      showDraft?.shortFormat?.resolution &&
+      (showDraft?.production?.defaultLipSyncModel || "fabric")
+  );
+  const assetsComplete = Boolean(
+    setupComplete &&
+      (showDraft?.characters || activeShow?.characters || []).length &&
+      visualAssets.length
+  );
+  const scriptUploaded = Boolean((episodeDraft?.scriptText || activeEpisode?.scriptText || "").trim());
+  const planBuilt = Boolean(productionMap.length);
+  const previewReady = Boolean(previewOutput?.localUrl);
+  const renderReady = Boolean(baseFinalOutput?.localUrl);
+  const compositeReady = Boolean(finishedMasterOutput?.localUrl || renderReady);
+  const deliveryReady = Boolean(finalOutput?.localUrl || thumbnailOutputs.length);
+  const workflowState = workflowSections.map((section) => {
+    const state = {
+      setup: { enabled: true, complete: setupComplete, unlockHint: "creating a project" },
+      assets: { enabled: setupComplete, complete: assetsComplete, unlockHint: "Setup is complete" },
+      script: { enabled: assetsComplete, complete: scriptUploaded, unlockHint: "Assets are connected" },
+      storyboard: { enabled: planBuilt, complete: planBuilt, unlockHint: "Script Build Plan finishes" },
+      preview: { enabled: planBuilt, complete: previewReady, unlockHint: "Script Build Plan finishes" },
+      composite: { enabled: renderReady, complete: compositeReady, unlockHint: "Preview renders final video" },
+      delivery: { enabled: compositeReady, complete: deliveryReady, unlockHint: "Composite has a final render" }
+    }[section.key];
+    return { ...section, ...state };
+  });
+  const activeWorkflowSection =
+    workflowState.find((section) => section.key === activeTab && section.enabled) ||
+    workflowState.find((section) => section.enabled) ||
+    workflowState[0];
+  const selectWorkflowSection = (sectionKey) => {
+    const section = workflowState.find((item) => item.key === sectionKey);
+    if (section?.enabled) setActiveTab(sectionKey);
+  };
   const productionShotTypes = shotAssetTypes.filter((type) => type.role !== "mask");
   const uploadShotTypes = shotAssetTypes.filter((type) => type.role !== "mask");
   const maskEditorLine = productionMap.find((line) => line.id === maskEditorLineId) || null;
@@ -2129,9 +2288,7 @@ export default function App() {
     ? "Show Library"
     : showDashboardView
       ? "Episodes"
-      : activeTab === "settings"
-        ? "Show Settings"
-        : activeEpisode?.title || "Episode Workspace";
+      : `${activeWorkflowSection?.label || "Setup"}${activeEpisode?.title ? ` / ${activeEpisode.title}` : ""}`;
 
   return (
     <div className={`appShell ${workspaceView ? "" : "noTabs"}`}>
@@ -2168,12 +2325,7 @@ export default function App() {
               Episodes
             </button>
           ) : null}
-          {libraryView ? (
-            <button className="primaryButton" onClick={createShow} disabled={busy}>
-              <Plus size={18} />
-              New Show
-            </button>
-          ) : (
+          {!libraryView ? (
             <>
               <button className="iconButton" onClick={renameActiveShow} title="Rename show" disabled={!activeShow || busy}>
                 <Pencil size={17} />
@@ -2201,24 +2353,9 @@ export default function App() {
                 New Episode
               </button>
             </>
-          )}
+          ) : null}
         </div>
       </header>
-
-      {workspaceView ? (
-        <nav className="tabbar">
-          {targetTabs.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              className={activeTab === key ? "active" : ""}
-              onClick={() => setActiveTab(key)}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
-        </nav>
-      ) : null}
 
       <main>
         {libraryView && (
@@ -2228,8 +2365,7 @@ export default function App() {
             activeShowId={activeShowId}
             busy={busy}
             onOpenShow={openShow}
-            onRenameShow={renameShow}
-            onDeleteShow={deleteShow}
+            onCreateShow={createShow}
           />
         )}
 
@@ -2245,7 +2381,16 @@ export default function App() {
           />
         )}
 
-        {workspaceView && activeTab === "studio" && (
+        {workspaceView && (
+          <div className="projectWorkspace">
+            <WorkflowRail
+              sections={workflowState}
+              activeSection={activeWorkflowSection.key}
+              onSelect={selectWorkflowSection}
+            />
+            <div className="projectCanvasStack">
+
+        {workspaceView && (
           <section className="overviewBand studioActionBand">
             <button className="primaryButton saveAllButton" onClick={saveStudioAndReview} disabled={!episodeDraft || busy}>
               <Save size={18} />
@@ -2259,18 +2404,18 @@ export default function App() {
           </section>
         )}
 
-        {workspaceView && activeTab === "studio" && (
+        {workspaceView && ["setup", "assets", "script", "storyboard"].includes(activeWorkflowSection.key) && (
           <div className="studioGrid">
-            {showDraft && (
+            {showDraft && activeWorkflowSection.key === "setup" && (
               <CollapsiblePanel
                 className="showIdentityPanel"
-                eyebrow="Show"
-                title="Identity"
-                defaultOpen={false}
+                eyebrow="Setup"
+                title="Show & Episode"
+                defaultOpen
                 action={
                   <button className="secondaryButton" onClick={saveShow} disabled={busy}>
                     <Save size={17} />
-                    Save Profile
+                    Save Setup
                   </button>
                 }
               >
@@ -2278,23 +2423,70 @@ export default function App() {
                   <Field label="Show name">
                     <input value={showDraft.name} onChange={(event) => updateShowDraft(["name"], event.target.value)} />
                   </Field>
+                  <Field label="Episode name">
+                    <input
+                      value={episodeDraft?.title || ""}
+                      onChange={(event) => updateEpisodeDraft(["title"], event.target.value)}
+                      placeholder="Create an episode to name it"
+                      disabled={!episodeDraft}
+                    />
+                  </Field>
                   <Field label="Description">
                     <textarea
                       value={showDraft.description}
                       onChange={(event) => updateShowDraft(["description"], event.target.value)}
                       rows={1}
+                      placeholder="One sentence show description"
                     />
                   </Field>
                 </div>
+                <div className="setupControlGrid">
+                  <Field label="Aspect ratio">
+                    <select value={showDraft.shortFormat?.aspectRatio || "16:9"} onChange={(event) => setShowAspect(event.target.value)}>
+                      {formatOptions.map((option) => (
+                        <option key={option.aspectRatio} value={option.aspectRatio}>
+                          {option.label} {option.detail}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Lip-sync model">
+                    <select
+                      value={showDraft.production?.defaultLipSyncModel || "fabric"}
+                      onChange={(event) => updateShowDraft(["production", "defaultLipSyncModel"], event.target.value)}
+                    >
+                      <option value="fabric">Fabric</option>
+                      <option value="kling">Kling</option>
+                    </select>
+                  </Field>
+                  <Field label="Resolution">
+                    <select
+                      value={normalizeResolutionMode(showDraft.shortFormat?.resolutionMode)}
+                      onChange={(event) => setShowResolutionMode(event.target.value)}
+                    >
+                      <option value="high">High Definition (1080p)</option>
+                      <option value="standard">Standard (720p)</option>
+                    </select>
+                  </Field>
+                  <Field label="Output">
+                    <input value={showDraft.shortFormat?.resolution || resolutionForFormat(showDraft.shortFormat?.aspectRatio, showDraft.shortFormat?.resolutionMode)} readOnly />
+                  </Field>
+                </div>
+                {!episodeDraft ? (
+                  <button className="primaryButton" type="button" onClick={createEpisode} disabled={!activeShow || busy}>
+                    <Plus size={18} />
+                    Create First Episode
+                  </button>
+                ) : null}
               </CollapsiblePanel>
             )}
 
-            {showDraft && (
+            {showDraft && activeWorkflowSection.key === "assets" && (
               <CollapsiblePanel
                 className="characterPanel"
-                eyebrow="Cast"
-                title="Characters & Visuals"
-                defaultOpen={false}
+                eyebrow="Assets"
+                title="Node Inputs"
+                defaultOpen
                 action={
                   <div className="buttonRow">
                     <Pill tone={voicesSource === "elevenlabs" ? "good" : "warn"}>
@@ -2364,11 +2556,12 @@ export default function App() {
               </CollapsiblePanel>
             )}
 
+            {activeWorkflowSection.key === "script" && (
             <CollapsiblePanel
               className="scriptPanel"
-              eyebrow="Episode"
-              title="Script Package"
-              defaultOpen={false}
+              eyebrow="Script"
+              title="Upload & Build Plan"
+              defaultOpen
               action={
                 <label className="secondaryButton">
                   <Upload size={17} />
@@ -2403,7 +2596,9 @@ export default function App() {
                 </button>
               </div>
             </CollapsiblePanel>
+            )}
 
+            {activeWorkflowSection.key === "storyboard" && (
             <ProductionMapPanel
               productionMap={productionMap}
               characters={activeShow?.characters || []}
@@ -2425,6 +2620,7 @@ export default function App() {
               busy={busy}
               busyAction={busyAction}
             />
+            )}
 
           </div>
         )}
@@ -2721,21 +2917,24 @@ export default function App() {
           </section>
         )}
 
-        {workspaceView && activeTab === "approvals" && (
+        {workspaceView && ["preview", "composite", "delivery"].includes(activeWorkflowSection.key) && (
           <section className="approvalsView">
             <div className="editorBand">
               <div>
-                <span className="eyebrow">Review Gates</span>
+                <span className="eyebrow">{activeWorkflowSection.label}</span>
                 <h3>{activeEpisode?.title || "No episode selected"}</h3>
               </div>
             </div>
+            {activeWorkflowSection.key === "preview" ? (
             <div className="approvalStack topGates">
               {approvals.map((gate) => (
                 <ApprovalGate key={gate.id} gate={gate} onApprove={setApproval} />
               ))}
             </div>
-            <AutomationRunbookPanel automation={activeAutomation} safety={safety} />
+            ) : null}
+            {activeWorkflowSection.key === "preview" ? <AutomationRunbookPanel automation={activeAutomation} safety={safety} /> : null}
             <FinalReviewPanel
+              mode={activeWorkflowSection.key}
               audioOutput={audioOutput}
               previewOutput={previewOutput}
               finalOutput={finalOutput}
@@ -2791,6 +2990,10 @@ export default function App() {
               ))}
             </div>
           </section>
+        )}
+
+            </div>
+          </div>
         )}
       </main>
 
@@ -2960,6 +3163,7 @@ function AutomationRunbookPanel({ automation = {}, safety = {} }) {
 }
 
 function FinalReviewPanel({
+  mode = "preview",
   audioOutput,
   previewOutput,
   finalOutput,
@@ -3031,6 +3235,9 @@ function FinalReviewPanel({
     thumbnailOutputs.length +
     reportOutputs.length;
   const reviewVideo = finalOutput || previewOutput;
+  const showPreviewTools = mode === "preview" || mode === "all";
+  const showCompositeTools = mode === "composite" || mode === "all";
+  const showDeliveryTools = mode === "delivery" || mode === "all";
   const renderBusy = busyAction === "rebuild-audio" || busyAction === "build-preview" || busyAction === "render-final";
   const thumbnailBusy = busyAction === "thumbnails";
   const selectedThumbnailId = drafts.selectedThumbnailOutputId || thumbnailOutputs.find((thumb) => thumb.isSelected)?.id || "";
@@ -3053,7 +3260,9 @@ function FinalReviewPanel({
   };
 
   return (
-    <section className="workPanel finalReviewPanel">
+    <section className={`workPanel finalReviewPanel ${mode}Mode`}>
+      {showPreviewTools ? (
+      <>
       <div className="panelHeader">
         <div>
           <span className="eyebrow">Render Control</span>
@@ -3126,7 +3335,10 @@ function FinalReviewPanel({
       </div>
 
       <RenderReadinessPanel readiness={readiness} />
+      </>
+      ) : null}
 
+      {showCompositeTools ? (
       <FinishingLayersPanel
         baseFinalOutput={baseFinalOutput}
         finishedMasterOutput={finishedMasterOutput}
@@ -3139,7 +3351,10 @@ function FinalReviewPanel({
         onExportMaster={onExportFinishedMaster}
         onGenerateMusic={onGenerateFinishingMusic}
       />
+      ) : null}
 
+      {showDeliveryTools ? (
+      <>
       <details className="reviewDetails thumbnailReviewPanel">
         <summary>
           <span className="summaryTitleWithIcon">
@@ -3225,8 +3440,10 @@ function FinalReviewPanel({
         onCheckYoutubeStatus={onCheckYoutubeStatus}
         onConnectYoutube={onConnectYoutube}
       />
+      </>
+      ) : null}
 
-      {hasOutputs ? (
+      {hasOutputs && showDeliveryTools ? (
         <details className="reviewDetails">
           <summary>
             <span>Local Outputs</span>
@@ -3329,6 +3546,7 @@ function FinishingLayersPanel({
   const initialFinishingLayers = normalizeFinishingLayersForUi(layers);
   const previousLayerIdsRef = useRef(new Set(initialFinishingLayers.map((layer) => layer.id)));
   const undoStackRef = useRef([]);
+  const lastSavedLayersKeyRef = useRef(layersKey);
   const [draftLayers, setDraftLayers] = useState(() => initialFinishingLayers);
   const [selectedLayerId, setSelectedLayerId] = useState("");
   const [undoCount, setUndoCount] = useState(0);
@@ -3347,9 +3565,23 @@ function FinishingLayersPanel({
     setDraftLayers(nextLayers);
     setSelectedLayerId((current) => addedLayer?.id || (nextLayers.some((layer) => layer.id === current) ? current : nextLayers[0]?.id || ""));
     previousLayerIdsRef.current = new Set(nextLayers.map((layer) => layer.id));
+    lastSavedLayersKeyRef.current = JSON.stringify(nextLayers);
     undoStackRef.current = [];
     setUndoCount(0);
   }, [layersKey]);
+
+  useEffect(() => {
+    if (!baseFinalOutput || finishedMasterOutput || busy) return undefined;
+    const draftKey = JSON.stringify(normalizeFinishingLayersForUi(draftLayers));
+    if (draftKey === lastSavedLayersKeyRef.current) return undefined;
+    const timer = window.setTimeout(async () => {
+      const savedEpisode = await onSaveLayers?.(draftLayers);
+      if (savedEpisode) {
+        lastSavedLayersKeyRef.current = draftKey;
+      }
+    }, 1400);
+    return () => window.clearTimeout(timer);
+  }, [draftLayers, baseFinalOutput?.id, finishedMasterOutput?.id, busy]);
 
   const baseTimelineSeconds = Math.max(
     1,
@@ -3372,7 +3604,6 @@ function FinishingLayersPanel({
   const hasLayers = draftLayers.length > 0;
   const uploadBusy = busyAction === "finishing-upload";
   const exportBusy = busyAction === "finishing-export";
-  const saveBusy = busyAction === "finishing-save";
   const musicBusy = busyAction === "finishing-music";
   const elevenMusicReady = Boolean(integrations?.elevenlabs);
 
@@ -4125,13 +4356,9 @@ function FinishingLayersPanel({
             <Undo2 size={16} />
             Undo
           </button>
-          <button className="secondaryButton" type="button" onClick={() => onSaveLayers?.(draftLayers)} disabled={!baseFinalOutput || busy}>
-            {saveBusy ? <RefreshCw className="spin" size={16} /> : <Save size={16} />}
-            Save Layers
-          </button>
           <button className="runButton" type="button" onClick={() => onExportMaster?.(draftLayers)} disabled={!baseFinalOutput || busy}>
             {exportBusy ? <RefreshCw className="spin" size={17} /> : <Film size={17} />}
-            Export Finished Master
+            Final Render
           </button>
           {finishedMasterOutput?.localUrl ? (
             <a className="secondaryButton" href={finishedMasterOutput.localUrl} target="_blank" rel="noreferrer">

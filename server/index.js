@@ -118,6 +118,7 @@ const campaignPlatformLimits = {
 const shortFormatDefaults = {
   aspectRatio: "9:16",
   resolution: "1080x1920",
+  resolutionMode: "high",
   wordsPerMinute: 145,
   fps: 30,
   container: "mp4",
@@ -3063,7 +3064,7 @@ async function writeLocalBuildReport({ reportId, episode, show, blockedGate }) {
     buildCheck(
       "format",
       "Aspect ratio and resolution are supported",
-      ["9:16", "16:9"].includes(episode.format?.aspectRatio),
+      ["9:16", "16:9", "21:9"].includes(episode.format?.aspectRatio),
       `${episode.format?.aspectRatio || "unknown"} / ${episode.format?.resolution || "unknown"}`
     ),
     buildCheck(
@@ -5886,6 +5887,7 @@ function parseResolution(resolution, aspectRatio) {
   if (match) {
     return { width: Number(match[1]), height: Number(match[2]) };
   }
+  if (aspectRatio === "21:9") return { width: 2560, height: 1080 };
   return aspectRatio === "16:9" ? { width: 1920, height: 1080 } : { width: 1080, height: 1920 };
 }
 
@@ -7647,7 +7649,13 @@ function findPdfPython() {
 }
 
 function normalizeShortFormat(format = {}) {
-  const aspectRatio = format.aspectRatio === "16:9" ? "16:9" : "9:16";
+  const aspectRatio = ["9:16", "16:9", "21:9"].includes(format.aspectRatio) ? format.aspectRatio : "9:16";
+  const resolutionMode = format.resolutionMode === "standard" ? "standard" : "high";
+  const defaultResolution = {
+    "9:16": resolutionMode === "standard" ? "720x1280" : "1080x1920",
+    "16:9": resolutionMode === "standard" ? "1280x720" : "1920x1080",
+    "21:9": resolutionMode === "standard" ? "1680x720" : "2560x1080"
+  }[aspectRatio];
   const durationBoundKeys = new Set(["min", "max", "target"].map((prefix) => `${prefix}Seconds`));
   const unboundedFormat = Object.fromEntries(
     Object.entries(format || {}).filter(([key]) => !durationBoundKeys.has(key))
@@ -7656,7 +7664,8 @@ function normalizeShortFormat(format = {}) {
     ...shortFormatDefaults,
     ...unboundedFormat,
     aspectRatio,
-    resolution: aspectRatio === "16:9" ? "1920x1080" : "1080x1920"
+    resolutionMode,
+    resolution: format.resolution || defaultResolution
   };
 }
 

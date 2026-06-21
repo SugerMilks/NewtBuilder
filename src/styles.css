@@ -23,6 +23,473 @@
   --danger: #ff6b7d;
 }
 
+/* NewtBuilder glass workflow refresh */
+:root {
+  --bg: #030303;
+  --panel: rgba(28, 28, 28, 0.72);
+  --panel-2: rgba(45, 43, 48, 0.58);
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --text: #faf7f0;
+  --muted: rgba(250, 247, 240, 0.62);
+  --soft: rgba(250, 247, 240, 0.42);
+  --jade: #d9c8ff;
+  --jade-dark: rgba(216, 198, 255, 0.22);
+  --coral: #e9b777;
+  --amber: #f2c378;
+  --blue: #a8d8ff;
+  --danger: #ff6f98;
+  --glass: rgba(255, 255, 255, 0.065);
+  --glass-strong: rgba(255, 255, 255, 0.115);
+  --glow-a: rgba(181, 147, 255, 0.34);
+  --glow-b: rgba(239, 181, 104, 0.24);
+}
+
+body {
+  background:
+    radial-gradient(circle at 52% 76%, rgba(181, 147, 255, 0.34), transparent 34%),
+    radial-gradient(circle at 86% 18%, rgba(239, 181, 104, 0.22), transparent 33%),
+    linear-gradient(135deg, #000 0%, #050505 42%, #18110d 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(circle at center, black, transparent 72%);
+}
+
+.appShell {
+  position: relative;
+  background: transparent;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(24px) saturate(140%);
+}
+
+.brandMark,
+.iconButton,
+.primaryButton,
+.secondaryButton,
+.quietButton,
+.runButton,
+.toggle,
+.metric,
+.workPanel,
+.showLaunchButton,
+.showCreateTile,
+.episodeCard,
+.reviewDetails,
+.approvalGate,
+.connectionStatus,
+.automationStageCard {
+  border-color: rgba(255, 255, 255, 0.13);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 22px 58px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(22px) saturate(128%);
+}
+
+.brandMark {
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.primaryButton,
+.runButton {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(216, 198, 255, 0.28), rgba(232, 183, 119, 0.24));
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.quietButton:hover,
+.iconButton:hover,
+.runButton:hover,
+.showLaunchButton:hover,
+.showCreateTile:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.32);
+  background-color: rgba(255, 255, 255, 0.09);
+}
+
+input,
+textarea,
+select {
+  border-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(7, 7, 7, 0.62);
+  border-radius: 12px;
+}
+
+main {
+  padding-top: clamp(28px, 4vw, 54px);
+}
+
+.showLibraryView {
+  min-height: calc(100vh - 150px);
+  align-content: start;
+  gap: 32px;
+}
+
+.libraryHeader {
+  max-width: 920px;
+}
+
+.libraryHeader h2 {
+  font-size: clamp(52px, 9vw, 128px);
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+.showLauncherGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+  gap: 18px;
+  max-width: 1040px;
+}
+
+.showCreateTile,
+.showLaunchButton {
+  min-height: 218px;
+  width: 100%;
+  border-radius: 28px;
+  color: var(--text);
+}
+
+.showCreateTile {
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.showLaunchCard {
+  min-width: 0;
+}
+
+.showLaunchButton {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 14px;
+  text-align: left;
+}
+
+.showLaunchThumb {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.72);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(216, 198, 255, 0.36), transparent 42%),
+    radial-gradient(circle at 80% 75%, rgba(232, 183, 119, 0.30), transparent 42%),
+    rgba(255, 255, 255, 0.05);
+}
+
+.showLaunchThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.showLaunchButton strong {
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.projectWorkspace {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: clamp(18px, 3vw, 42px);
+  min-height: calc(100vh - 150px);
+}
+
+.workflowRail {
+  position: sticky;
+  top: 110px;
+  height: calc(100vh - 142px);
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding-left: 6px;
+}
+
+.workflowRailCurve {
+  position: absolute;
+  left: -122px;
+  top: 4%;
+  width: 190px;
+  height: 92%;
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.workflowStep {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.workflowStep.locked {
+  cursor: not-allowed;
+  opacity: 0.36;
+}
+
+.workflowStep.active,
+.workflowStep.complete {
+  color: var(--text);
+}
+
+.workflowDot {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11);
+}
+
+.workflowStep.active .workflowDot {
+  color: #050505;
+  background: #fff;
+  box-shadow:
+    0 0 0 7px rgba(255, 255, 255, 0.08),
+    0 0 36px rgba(216, 198, 255, 0.32);
+}
+
+.workflowStep.complete:not(.active) .workflowDot {
+  color: #fff;
+  background: rgba(216, 198, 255, 0.24);
+}
+
+.workflowLabel {
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.projectCanvasStack {
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.workflowCanvas,
+.studioGrid,
+.approvalsView {
+  min-width: 0;
+}
+
+.studioActionBand {
+  align-items: center;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(18px);
+}
+
+.studioGrid {
+  grid-template-columns: 1fr;
+}
+
+.workPanel,
+.reviewDetails,
+.approvalGate {
+  border-radius: 24px;
+}
+
+.panelHeader,
+.editorBand,
+.settingsGroupHeader,
+.renderCommandBar,
+.finishingHeader,
+.thumbnailReviewHeader,
+.episodeCompleteHeader {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.identityCompactRow,
+.setupControlGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.setupControlGrid {
+  margin-top: 14px;
+}
+
+.characterList {
+  display: grid;
+  gap: 10px;
+}
+
+.characterRow {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.castVisualLibrary {
+  margin-top: 18px;
+}
+
+.shotUploadCard {
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.shotDrop {
+  border-radius: 18px;
+}
+
+.productionMapPanel {
+  overflow: hidden;
+}
+
+.productionBlockList {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 3px;
+}
+
+.productionLine,
+.insertProductionLine {
+  min-height: 240px;
+  border-radius: 6px;
+  overflow: hidden;
+  grid-template-columns: 1fr;
+  align-content: start;
+}
+
+.productionLineMeta,
+.lineAssignmentGrid,
+.insertShotControls {
+  min-width: 0;
+}
+
+.finalReviewPanel.previewMode .reviewDetails,
+.finalReviewPanel.previewMode .finalPackagePanel {
+  margin-top: 0;
+}
+
+.finalReviewPanel.compositeMode,
+.finalReviewPanel.deliveryMode {
+  display: grid;
+  gap: 16px;
+}
+
+.finishingLayersPanel[open] {
+  border-radius: 24px;
+}
+
+.finishingLayersPanel summary {
+  display: none;
+}
+
+.finishingBody {
+  padding-top: 0;
+}
+
+.finalReviewGrid,
+.finishingPreviewGrid {
+  border-radius: 24px;
+}
+
+.thumbnailOutputCard,
+.episodeCompletePanel,
+.packageMetadata,
+.packageAssetGrid article,
+.finalQaItem,
+.youtubeDraftManager,
+.promotionPrepBody {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+@media (max-width: 980px) {
+  .projectWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .workflowRail {
+    position: relative;
+    top: auto;
+    height: auto;
+    display: flex;
+    overflow-x: auto;
+    padding: 6px 2px 10px;
+  }
+
+  .workflowRailCurve {
+    display: none;
+  }
+
+  .workflowStep {
+    grid-template-columns: 40px auto;
+    min-width: max-content;
+  }
+
+  .workflowDot {
+    width: 40px;
+    height: 40px;
+  }
+
+  .workflowLabel {
+    font-size: 16px;
+  }
+
+  .identityCompactRow,
+  .setupControlGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .productionBlockList {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .libraryHeader h2 {
+    font-size: 54px;
+  }
+
+  .showLauncherGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .productionBlockList {
+    grid-template-columns: 1fr;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -3674,5 +4141,188 @@ label:has(textarea:disabled) {
 
   .metric {
     min-width: 45%;
+  }
+}
+
+/* Final cascade layer for the NewtBuilder remake. */
+body {
+  background:
+    radial-gradient(circle at 52% 76%, rgba(181, 147, 255, 0.34), transparent 34%),
+    radial-gradient(circle at 86% 18%, rgba(239, 181, 104, 0.22), transparent 33%),
+    linear-gradient(135deg, #000 0%, #050505 42%, #18110d 100%);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(24px) saturate(140%);
+}
+
+.brandMark,
+.iconButton,
+.primaryButton,
+.secondaryButton,
+.quietButton,
+.runButton,
+.toggle,
+.metric,
+.workPanel,
+.showLaunchButton,
+.showCreateTile,
+.episodeCard,
+.reviewDetails,
+.approvalGate,
+.connectionStatus,
+.automationStageCard {
+  border-color: rgba(255, 255, 255, 0.13);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 22px 58px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(22px) saturate(128%);
+}
+
+.brandMark {
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.primaryButton,
+.runButton {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(216, 198, 255, 0.28), rgba(232, 183, 119, 0.24));
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.showLibraryView {
+  min-height: calc(100vh - 150px);
+  align-content: start;
+  gap: 32px;
+}
+
+.libraryHeader h2 {
+  font-size: clamp(52px, 9vw, 128px);
+  font-weight: 300;
+}
+
+.showLauncherGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+  gap: 18px;
+  max-width: 1040px;
+}
+
+.showCreateTile,
+.showLaunchButton {
+  min-height: 218px;
+  width: 100%;
+  border-radius: 28px;
+  color: var(--text);
+}
+
+.projectWorkspace {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: clamp(18px, 3vw, 42px);
+  min-height: calc(100vh - 150px);
+}
+
+.workflowRail {
+  position: sticky;
+  top: 110px;
+  height: calc(100vh - 142px);
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding-left: 6px;
+}
+
+.workflowStep {
+  grid-template-columns: 46px 1fr;
+  min-height: 48px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.workflowDot {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.workflowStep.active .workflowDot {
+  color: #050505;
+  background: #fff;
+  box-shadow:
+    0 0 0 7px rgba(255, 255, 255, 0.08),
+    0 0 36px rgba(216, 198, 255, 0.32);
+}
+
+.workflowLabel {
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.studioGrid {
+  grid-template-columns: 1fr;
+}
+
+.workPanel,
+.reviewDetails,
+.approvalGate {
+  border-radius: 24px;
+}
+
+.identityCompactRow,
+.setupControlGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.productionBlockList {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 3px;
+}
+
+.productionLine,
+.insertProductionLine {
+  min-height: 240px;
+  border-radius: 6px;
+  overflow: hidden;
+  grid-template-columns: 1fr;
+}
+
+.finishingLayersPanel summary {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .projectWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .workflowRail {
+    position: relative;
+    top: auto;
+    height: auto;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .identityCompactRow,
+  .setupControlGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .productionBlockList {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
   }
 }
