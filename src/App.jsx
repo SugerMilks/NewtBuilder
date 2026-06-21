@@ -36,6 +36,7 @@ const API = import.meta.env.VITE_API_URL || "";
 const INSERT_TRIM_DEFAULT_SECONDS = 2;
 const AUTOSAVE_DELAY_MS = 4000;
 const MASK_PREVIEW_ALPHA = 118;
+const EMPTY_HASHTAGS = Object.freeze([]);
 
 const automationControls = [
   {
@@ -2161,7 +2162,9 @@ export default function App() {
     ...socialConfig,
     templates: normalizePromotionTemplates(socialConfig.templates),
     showName: showDraft?.name || activeShow?.name || "",
-    hashtags: showDraft?.creative?.recurringHashtags || activeShow?.creative?.recurringHashtags || [],
+    showDescription: showDraft?.description || activeShow?.description || "",
+    episodeTitle: episodeDraft?.title || activeEpisode?.title || "",
+    hashtags: showDraft?.creative?.recurringHashtags || activeShow?.creative?.recurringHashtags || EMPTY_HASHTAGS,
     cta: showDraft?.creative?.defaultCta || activeShow?.creative?.defaultCta || ""
   };
   const productionMap = episodeDraft?.productionMap || activeEpisode?.productionMap || [];
@@ -2964,11 +2967,19 @@ function thumbnailFormatLabel(aspectRatio = "16:9") {
   return option ? `${option.label} ${option.detail}` : aspectRatio || "Thumbnail";
 }
 
+function deliveryHashtagText(value) {
+  return Array.isArray(value) ? value.filter(Boolean).join(" ") : String(value || "");
+}
+
+function deliveryTagText(value) {
+  return Array.isArray(value) ? value.filter(Boolean).join(", ") : String(value || "");
+}
+
 function defaultDeliveryPlatforms({ youtubeDraft = {}, deliveryDraft = {}, socialConfig = {} }) {
   const savedPlatforms = deliveryDraft.platforms && typeof deliveryDraft.platforms === "object" ? deliveryDraft.platforms : {};
-  const defaultTitle = youtubeDraft.title || socialConfig.showName || "";
-  const defaultDescription = youtubeDraft.description || socialConfig.cta || "";
-  const defaultHashtags = socialConfig.hashtags || "";
+  const defaultTitle = youtubeDraft.title || socialConfig.episodeTitle || socialConfig.showName || "";
+  const defaultDescription = youtubeDraft.description || socialConfig.showDescription || socialConfig.cta || "";
+  const defaultHashtags = deliveryHashtagText(socialConfig.hashtags);
   return Object.fromEntries(
     deliveryPlatformOptions.map((platform) => {
       const saved = savedPlatforms[platform.key] || {};
@@ -4513,10 +4524,14 @@ function FinalPackagePanel({
   const youtubeDraftKey = JSON.stringify(youtubeDraft || {});
   const deliveryDraftKey = JSON.stringify(deliveryDraft || {});
   const defaultPlatforms = () => defaultDeliveryPlatforms({ youtubeDraft, deliveryDraft, socialConfig });
+  const defaultYoutubeTitle = youtubeDraft.title || socialConfig.episodeTitle || socialConfig.showName || "";
+  const defaultYoutubeDescription = youtubeDraft.description || socialConfig.showDescription || socialConfig.cta || "";
+  const defaultHashtagsText = deliveryHashtagText(socialConfig.hashtags);
+  const defaultTagsText = deliveryTagText(socialConfig.hashtags);
   const [youtubeForm, setYoutubeForm] = useState(() => ({
-    title: youtubeDraft.title || "",
-    description: youtubeDraft.description || "",
-    tagsText: (youtubeDraft.tags || []).join(", "),
+    title: defaultYoutubeTitle,
+    description: defaultYoutubeDescription,
+    tagsText: (youtubeDraft.tags || []).join(", ") || defaultTagsText,
     privacyStatus: "private",
     categoryId: youtubeDraft.categoryId || "24",
     madeForKids: Boolean(youtubeDraft.madeForKids),
@@ -4540,9 +4555,9 @@ function FinalPackagePanel({
   useEffect(() => {
     const next = JSON.parse(youtubeDraftKey || "{}");
     setYoutubeForm({
-      title: next.title || "",
-      description: next.description || "",
-      tagsText: (next.tags || []).join(", "),
+      title: next.title || socialConfig.episodeTitle || socialConfig.showName || "",
+      description: next.description || socialConfig.showDescription || socialConfig.cta || "",
+      tagsText: (next.tags || []).join(", ") || deliveryTagText(socialConfig.hashtags),
       privacyStatus: "private",
       categoryId: next.categoryId || "24",
       madeForKids: Boolean(next.madeForKids),
@@ -4561,12 +4576,12 @@ function FinalPackagePanel({
         ...(next.promotion || {})
       }
     });
-  }, [youtubeDraftKey]);
+  }, [youtubeDraftKey, socialConfig.cta, socialConfig.episodeTitle, socialConfig.hashtags, socialConfig.showDescription, socialConfig.showName]);
 
   useEffect(() => {
     const nextDelivery = JSON.parse(deliveryDraftKey || "{}");
     setPlatformForm(defaultDeliveryPlatforms({ youtubeDraft, deliveryDraft: nextDelivery, socialConfig }));
-  }, [deliveryDraftKey, youtubeDraftKey, socialConfig.cta, socialConfig.hashtags, socialConfig.showName]);
+  }, [deliveryDraftKey, youtubeDraftKey, socialConfig.cta, socialConfig.episodeTitle, socialConfig.hashtags, socialConfig.showDescription, socialConfig.showName]);
 
   function updateYoutubeForm(key, value) {
     setYoutubeForm((prev) => ({
@@ -5155,7 +5170,7 @@ function FinalPackagePanel({
                         <Field label="Hashtags">
                           <input
                             value={draft.hashtags || ""}
-                            placeholder={socialConfig.hashtags || "#shorts"}
+                            placeholder={defaultHashtagsText || "#shorts"}
                             onChange={(event) => updatePlatform(platform.key, { hashtags: event.target.value })}
                           />
                         </Field>
