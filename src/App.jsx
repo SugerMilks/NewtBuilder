@@ -898,7 +898,14 @@ function normalizeAssetNodeConnections(value = {}) {
 function AssetNodeCanvas({ children, connections = {}, onAddCharacter, onFocusNode }) {
   const [menu, setMenu] = useState(null);
   const normalizedConnections = normalizeAssetNodeConnections(connections);
-  const connectedCount = assetNodeKeys.filter((key) => normalizedConnections[key]).length;
+  const requiredAssetConnections = ["character", "visual"];
+  const requiredConnectedCount = requiredAssetConnections.filter((key) => normalizedConnections[key]).length;
+  const coreReady = requiredConnectedCount === requiredAssetConnections.length;
+  const inputStatus = coreReady
+    ? normalizedConnections.insert
+      ? "ready + inserts"
+      : "ready"
+    : `${requiredConnectedCount}/${requiredAssetConnections.length} core`;
 
   function openMenu(event) {
     event.preventDefault();
@@ -919,10 +926,10 @@ function AssetNodeCanvas({ children, connections = {}, onAddCharacter, onFocusNo
       <div className="assetNodeBoard">
         {children}
       </div>
-      <article className={`assetInputNode ${connectedCount >= 2 ? "ready" : ""}`}>
+      <article className={`assetInputNode ${coreReady ? "ready" : ""}`}>
         <span className="nodePort input" />
         <strong>INPUT</strong>
-        <small>{connectedCount >= 2 ? "ready" : `${connectedCount}/2 required`}</small>
+        <small>{inputStatus}</small>
       </article>
       {menu ? (
         <div className="assetContextMenu" style={{ left: menu.x, top: menu.y }} onClick={(event) => event.stopPropagation()}>
