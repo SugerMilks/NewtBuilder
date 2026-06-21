@@ -1124,8 +1124,7 @@ export default function App() {
   }
 
   function openShowDashboard() {
-    setAppView("episode");
-    setActiveTab("setup");
+    setAppView("show");
   }
 
   function openShowSettings() {
