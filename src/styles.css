@@ -1328,7 +1328,7 @@ main {
 @media (max-width: 1180px) {
   .assetNodeBoard {
     grid-template-columns: 1fr;
-    padding-right: 0;
+    padding-right: clamp(118px, 18vw, 160px);
   }
 
   .characterNode,
@@ -1337,10 +1337,15 @@ main {
     grid-row: auto;
   }
 
-  .assetInputNode,
   .assetNodeConnectors,
   .scriptNodeCanvas::after {
     display: none;
+  }
+
+  .assetInputNode {
+    right: 18px;
+    min-width: 96px;
+    padding: 14px 16px;
   }
 
   .scriptNodeCanvas {
@@ -1362,6 +1367,17 @@ main {
 }
 
 @media (max-width: 760px) {
+  .assetNodeBoard {
+    padding-top: 78px;
+    padding-right: 0;
+  }
+
+  .assetInputNode {
+    top: 20px;
+    right: 20px;
+    transform: none;
+  }
+
   .visualFrameNode .shotUploadGrid,
   .nodeUploadComposer,
   .nodeUploadComposer.insertComposer,
