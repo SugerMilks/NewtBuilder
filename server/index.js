@@ -572,10 +572,22 @@ app.patch("/api/episodes/:id/assets/:assetId", async (req, res) => {
     Object.prototype.hasOwnProperty.call(req.body || {}, "characterTags") ||
     Object.prototype.hasOwnProperty.call(req.body?.metadata || {}, "speakingTag") ||
     Object.prototype.hasOwnProperty.call(req.body?.metadata || {}, "characterTags");
+  const hasShotRolePatch =
+    Object.prototype.hasOwnProperty.call(req.body || {}, "shotRole") ||
+    Object.prototype.hasOwnProperty.call(req.body || {}, "role");
+  const requestedShotRole = sanitizeShotRole(req.body?.shotRole ?? req.body?.role ?? asset.shotRole);
+  const patchableShotRoles = new Set(["character_one_shot", "medium_two_shot", "wide_shot", "insert_shot", "general"]);
+  const nextShotRole = patchableShotRoles.has(requestedShotRole) ? requestedShotRole : asset.shotRole;
   const updatedAssets = current.assets.map((item) =>
     item.id === assetId
       ? normalizeAsset({
           ...item,
+          ...(hasShotRolePatch
+            ? {
+                shotRole: nextShotRole,
+                roleLabel: labelForShotRole(nextShotRole)
+              }
+            : {}),
           metadata: {
             ...(item.metadata || {}),
             ...(hasSpeakingTagPatch ? { speakingTag } : {}),
@@ -604,7 +616,14 @@ app.patch("/api/episodes/:id/assets/:assetId", async (req, res) => {
     ...current,
     assets: remainingAssets,
     productionMap,
-    jobLog: appendLog(current.jobLog, `Updated ${hasInsertTagPatch ? "insert" : "speaking"} tag for ${asset.fileName}.`),
+    jobLog: appendLog(
+      current.jobLog,
+      `Updated ${[
+        hasShotRolePatch ? "shot type" : "",
+        hasInsertTagPatch ? "insert tag" : "",
+        hasSpeakingTagPatch ? "speaking tag" : ""
+      ].filter(Boolean).join(" and ") || "asset"} for ${asset.fileName}.`
+    ),
     updatedAt: new Date().toISOString()
   }), show);
   await writeEpisodes([updated, ...episodes.filter((item) => item.id !== updated.id)]);

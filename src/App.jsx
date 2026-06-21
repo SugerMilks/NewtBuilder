@@ -2031,6 +2031,21 @@ export default function App() {
     }
   }
 
+  async function updateAssetShotRole(assetId, shotRole) {
+    if (!assetId || !activeEpisode) return;
+    try {
+      const episode = await request(`/api/episodes/${activeEpisode.id}/assets/${assetId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ shotRole })
+      });
+      setEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
+      setEpisodeDraft(structuredClone(episode));
+      setStatus("Image shot type saved.");
+    } catch (error) {
+      setStatus(error.message);
+    }
+  }
+
   function toggleAssetNodeConnection(nodeKey) {
     if (!assetNodeKeys.includes(nodeKey)) return;
     setEpisodeDraft((prev) => {
@@ -2838,6 +2853,7 @@ export default function App() {
                       onUpload={uploadAssets}
                       onDelete={deleteAsset}
                       onUpdateTags={updateAssetTags}
+                      onUpdateShotRole={updateAssetShotRole}
                     />
                   </article>
                   <article className="assetNode insertFrameNode" id="insert-frame-node">
@@ -7904,7 +7920,7 @@ function assetNodeChipLabel(asset) {
   );
 }
 
-function VisualFrameLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUpload, onDelete, onUpdateTags }) {
+function VisualFrameLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUpload, onDelete, onUpdateTags, onUpdateShotRole }) {
   const characterShotTypes = uploadShotTypes.filter((type) => type.role !== "insert_shot");
   const [selectedRole, setSelectedRole] = useState(characterShotTypes[0]?.role || "character_one_shot");
   const [speakerTag, setSpeakerTag] = useState("");
@@ -7963,6 +7979,8 @@ function VisualFrameLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUplo
             showUpload={false}
             onDelete={onDelete}
             onUpdateTags={onUpdateTags}
+            shotTypes={characterShotTypes}
+            onUpdateShotRole={onUpdateShotRole}
           />
         ))}
       </div>
@@ -8025,7 +8043,7 @@ function InsertFrameLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUplo
   );
 }
 
-function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags, showUpload = true }) {
+function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags, onUpdateShotRole, shotTypes = [], showUpload = true }) {
   const Icon = type.icon;
   const previewAssets = (assets || []).filter((asset) => asset.type === "image");
   const isInsert = type.role === "insert_shot";
@@ -8078,6 +8096,13 @@ function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags,
                 kind={isInsert ? "insert" : "speaking"}
                 onSave={(tags) => onUpdateTags?.(asset.id, tags, isInsert ? "insert" : "speaking")}
               />
+              {!isInsert && shotTypes.length ? (
+                <AssetShotRoleField
+                  asset={asset}
+                  shotTypes={shotTypes}
+                  onSave={(shotRole) => onUpdateShotRole?.(asset.id, shotRole)}
+                />
+              ) : null}
             </div>
           ))}
         </div>
@@ -8085,6 +8110,23 @@ function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags,
         <div className="assetEmpty">No images yet.</div>
       )}
     </article>
+  );
+}
+
+function AssetShotRoleField({ asset, shotTypes = [], onSave }) {
+  const currentRole = asset?.shotRole || shotTypes[0]?.role || "character_one_shot";
+
+  return (
+    <label className="assetShotRoleField">
+      <span>Shot type</span>
+      <select value={currentRole} onChange={(event) => onSave?.(event.target.value)}>
+        {shotTypes.map((type) => (
+          <option key={type.role} value={type.role}>
+            {type.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
