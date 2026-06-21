@@ -3454,6 +3454,11 @@ function normalizeThumbnailFormats(formats = [], fallbackAspect = "16:9") {
   return next.length ? [...new Set(next)] : [fallback];
 }
 
+function thumbnailFormatLabel(aspectRatio = "16:9") {
+  const option = thumbnailFormatOptions.find((format) => format.aspectRatio === aspectRatio);
+  return option ? `${option.label} ${option.detail}` : aspectRatio || "Thumbnail";
+}
+
 function defaultDeliveryPlatforms({ youtubeDraft = {}, deliveryDraft = {}, socialConfig = {} }) {
   const savedPlatforms = deliveryDraft.platforms && typeof deliveryDraft.platforms === "object" ? deliveryDraft.platforms : {};
   const defaultTitle = youtubeDraft.title || socialConfig.showName || "";
@@ -3933,19 +3938,22 @@ function FinalReviewPanel({
           ) : null}
           {thumbnailOutputs.length ? (
             <div className="thumbnailOutputGrid">
-              {thumbnailOutputs.slice(0, 6).map((thumb) => (
-                <button
-                  type="button"
-                  className={`thumbnailOutputCard ${selectedThumbnailId === thumb.id ? "selected" : ""}`}
-                  key={thumb.id}
-                  onClick={() => onSelectThumbnail(thumb)}
-                  disabled={busy}
-                >
-                  <img src={thumb.localUrl} alt="" />
-                  <span>{thumb.name || thumb.fileName}</span>
-                  <strong>{selectedThumbnailId === thumb.id ? "Final thumbnail" : "Select thumbnail"}</strong>
-                </button>
-              ))}
+              {thumbnailOutputs.slice(0, 6).map((thumb) => {
+                const thumbAspect = thumb.aspectRatio || selectedFormat.aspectRatio || "16:9";
+                return (
+                  <button
+                    type="button"
+                    className={`thumbnailOutputCard ${selectedThumbnailId === thumb.id ? "selected" : ""}`}
+                    key={thumb.id}
+                    onClick={() => onSelectThumbnail(thumb)}
+                    disabled={busy}
+                  >
+                    <img src={thumb.localUrl} alt="" style={{ aspectRatio: cssAspectRatio(thumbAspect) }} />
+                    <span>{thumbnailFormatLabel(thumbAspect)}</span>
+                    <strong>{selectedThumbnailId === thumb.id ? "Final thumbnail" : "Select thumbnail"}</strong>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <div className="emptyState compact">Build a preview or final render, then generate AI thumbnail candidates.</div>
