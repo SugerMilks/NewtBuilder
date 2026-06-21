@@ -878,7 +878,7 @@ function WorkflowCanvas({ section, children, meta = null }) {
   );
 }
 
-function AssetNodeCanvas({ children, onAddCharacter }) {
+function AssetNodeCanvas({ children, onAddCharacter, onFocusNode }) {
   const [menu, setMenu] = useState(null);
 
   function openMenu(event) {
@@ -909,10 +909,10 @@ function AssetNodeCanvas({ children, onAddCharacter }) {
           <button type="button" onClick={() => { onAddCharacter?.(); setMenu(null); }}>
             Character node
           </button>
-          <button type="button" onClick={() => setMenu(null)}>
+          <button type="button" onClick={() => { onFocusNode?.("visual-frame-node"); setMenu(null); }}>
             Visual Frame node
           </button>
-          <button type="button" onClick={() => setMenu(null)}>
+          <button type="button" onClick={() => { onFocusNode?.("insert-frame-node"); setMenu(null); }}>
             Insert Frame node
           </button>
         </div>
@@ -1908,12 +1908,14 @@ export default function App() {
     }
   }
 
-  async function uploadAssets(files, role = "general") {
+  async function uploadAssets(files, role = "general", metadata = {}) {
     if (!files?.length) return;
     const fd = new FormData();
     const shotType = shotAssetTypes.find((type) => type.role === role);
     fd.append("role", role);
     fd.append("roleLabel", shotType?.label || "General Asset");
+    if (metadata.speakingTag) fd.append("speakingTag", normalizeSpeakingTag(metadata.speakingTag));
+    if (metadata.insertTag) fd.append("insertTag", normalizeSpeakingTag(metadata.insertTag));
     Array.from(files).forEach((file) => fd.append("assets", file));
     setBusy(true);
     try {
@@ -1970,16 +1972,18 @@ export default function App() {
     }
   }
 
-  async function updateAssetTags(assetId, speakingTag) {
+  async function updateAssetTags(assetId, tag, tagKind = "speaking") {
     if (!assetId || !activeEpisode) return;
+    const normalizedTag = normalizeSpeakingTag(tag);
+    const payload = tagKind === "insert" ? { insertTag: normalizedTag } : { speakingTag: normalizedTag };
     try {
       const episode = await request(`/api/episodes/${activeEpisode.id}/assets/${assetId}`, {
         method: "PATCH",
-        body: JSON.stringify({ speakingTag })
+        body: JSON.stringify(payload)
       });
       setEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
       setEpisodeDraft(structuredClone(episode));
-      setStatus("Image character tags saved.");
+      setStatus(tagKind === "insert" ? "Insert tag saved." : "Image character tag saved.");
     } catch (error) {
       setStatus(error.message);
     }
@@ -2616,8 +2620,11 @@ export default function App() {
                   </div>
                 }
               >
-                <AssetNodeCanvas onAddCharacter={addCharacter}>
-                  <article className="assetNode characterNode">
+                <AssetNodeCanvas
+                  onAddCharacter={addCharacter}
+                  onFocusNode={(nodeId) => document.getElementById(nodeId)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                >
+                  <article className="assetNode characterNode" id="character-node">
                     <span className="nodePort output" />
                     <div className="nodeHeader">
                       <span className="eyebrow">Character Node</span>
@@ -2691,13 +2698,28 @@ export default function App() {
                       ))}
                     </div>
                   </article>
-                  <article className="assetNode visualFrameNode">
+                  <article className="assetNode visualFrameNode" id="visual-frame-node">
                     <span className="nodePort output" />
                     <div className="nodeHeader">
-                      <span className="eyebrow">Visual Frame Nodes</span>
-                      <strong>Frames & Inserts</strong>
+                      <span className="eyebrow">Visual Frame Node</span>
+                      <strong>Frame Images</strong>
                     </div>
-                    <CastVisualLibrary
+                    <VisualFrameLibrary
+                      uploadShotTypes={uploadShotTypes}
+                      assetCounts={assetCounts}
+                      assetsByRole={assetsByRole}
+                      onUpload={uploadAssets}
+                      onDelete={deleteAsset}
+                      onUpdateTags={updateAssetTags}
+                    />
+                  </article>
+                  <article className="assetNode insertFrameNode" id="insert-frame-node">
+                    <span className="nodePort output" />
+                    <div className="nodeHeader">
+                      <span className="eyebrow">Insert Frame Node</span>
+                      <strong>Insert Images</strong>
+                    </div>
+                    <InsertFrameLibrary
                       uploadShotTypes={uploadShotTypes}
                       assetCounts={assetCounts}
                       assetsByRole={assetsByRole}
@@ -7541,12 +7563,58 @@ function shotBindingLabel(binding) {
   return [binding.prefix, roleText].filter(Boolean).join(" ");
 }
 
-function CastVisualLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUpload, onDelete, onUpdateTags }) {
+function assetNodeChipLabel(asset) {
+  return (
+    shotBindingLabel(assetShotBinding(asset)) ||
+    normalizeSpeakingTag(asset?.metadata?.speakingTag || asset?.metadata?.insertTag || asset?.metadata?.characterTags || "")
+  );
+}
+
+function VisualFrameLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUpload, onDelete, onUpdateTags }) {
   const characterShotTypes = uploadShotTypes.filter((type) => type.role !== "insert_shot");
-  const insertShotType = uploadShotTypes.find((type) => type.role === "insert_shot");
+  const [selectedRole, setSelectedRole] = useState(characterShotTypes[0]?.role || "character_one_shot");
+  const [speakerTag, setSpeakerTag] = useState("");
+  const selectedType = characterShotTypes.find((type) => type.role === selectedRole) || characterShotTypes[0];
+
+  function uploadVisualFrames(files) {
+    if (!files?.length || !selectedType) return;
+    onUpload?.(files, selectedType.role, { speakingTag: speakerTag });
+  }
 
   return (
-    <div className="castVisualLibrary">
+    <div className="frameNodeBody">
+      <div className="nodeUploadComposer">
+        <label className="field">
+          <span>Speaker tag</span>
+          <input
+            value={speakerTag}
+            onChange={(event) => setSpeakerTag(event.target.value)}
+            onBlur={() => setSpeakerTag(normalizeSpeakingTag(speakerTag))}
+            placeholder="@name"
+          />
+        </label>
+        <label className="field">
+          <span>Shot type</span>
+          <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)}>
+            {characterShotTypes.map((type) => (
+              <option key={type.role} value={type.role}>{type.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="secondaryButton uploadComposerButton">
+          <Upload size={16} />
+          Upload Frames
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(event) => {
+              uploadVisualFrames(event.target.files);
+              event.target.value = "";
+            }}
+          />
+        </label>
+      </div>
       <div className="castSubheader">
         <span className="eyebrow">Cast Visuals</span>
         <strong>Shot Images</strong>
@@ -7558,37 +7626,75 @@ function CastVisualLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUploa
             type={type}
             count={assetCounts[type.role] || 0}
             assets={assetsByRole[type.role] || []}
-            onUpload={(files) => onUpload(files, type.role)}
+            showUpload={false}
             onDelete={onDelete}
             onUpdateTags={onUpdateTags}
           />
         ))}
       </div>
-      {insertShotType ? (
-        <>
-          <div className="castSubheader compact">
-            <span className="eyebrow">Episode Inserts</span>
-            <strong>Insert Shots</strong>
-          </div>
-          <div className="shotUploadGrid insertShotUploadGrid">
-            <ShotUploadCard
-              type={insertShotType}
-              count={assetCounts[insertShotType.role] || 0}
-              assets={assetsByRole[insertShotType.role] || []}
-              onUpload={(files) => onUpload(files, insertShotType.role)}
-              onDelete={onDelete}
-              onUpdateTags={onUpdateTags}
-            />
-          </div>
-        </>
-      ) : null}
     </div>
   );
 }
 
-function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags }) {
+function InsertFrameLibrary({ uploadShotTypes, assetCounts, assetsByRole, onUpload, onDelete, onUpdateTags }) {
+  const insertShotType = uploadShotTypes.find((type) => type.role === "insert_shot");
+  const [insertTag, setInsertTag] = useState("");
+
+  if (!insertShotType) return null;
+
+  function uploadInsertFrames(files) {
+    if (!files?.length) return;
+    onUpload?.(files, insertShotType.role, { insertTag });
+  }
+
+  return (
+    <div className="frameNodeBody">
+      <div className="nodeUploadComposer insertComposer">
+        <label className="field">
+          <span>Insert tag</span>
+          <input
+            value={insertTag}
+            onChange={(event) => setInsertTag(event.target.value)}
+            onBlur={() => setInsertTag(normalizeSpeakingTag(insertTag))}
+            placeholder="@Clock"
+          />
+        </label>
+        <label className="secondaryButton uploadComposerButton">
+          <Upload size={16} />
+          Upload Inserts
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(event) => {
+              uploadInsertFrames(event.target.files);
+              event.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+      <div className="castSubheader compact">
+        <span className="eyebrow">Episode Inserts</span>
+        <strong>Tagged Insert Images</strong>
+      </div>
+      <div className="shotUploadGrid insertShotUploadGrid">
+        <ShotUploadCard
+          type={insertShotType}
+          count={assetCounts[insertShotType.role] || 0}
+          assets={assetsByRole[insertShotType.role] || []}
+          showUpload={false}
+          onDelete={onDelete}
+          onUpdateTags={onUpdateTags}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags, showUpload = true }) {
   const Icon = type.icon;
   const previewAssets = (assets || []).filter((asset) => asset.type === "image");
+  const isInsert = type.role === "insert_shot";
 
   return (
     <article className="shotUploadCard">
@@ -7603,24 +7709,29 @@ function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags 
         <Pill tone={count ? "good" : "neutral"}>{count}</Pill>
       </div>
 
-      <label className="shotDrop">
-        <Upload size={18} />
-        <span>Upload images</span>
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={(event) => onUpload(event.target.files)}
-        />
-      </label>
+      {showUpload ? (
+        <label className="shotDrop">
+          <Upload size={18} />
+          <span>Upload images</span>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(event) => {
+              onUpload?.(event.target.files);
+              event.target.value = "";
+            }}
+          />
+        </label>
+      ) : null}
 
       {previewAssets.length ? (
         <div className="assetPreviewGrid">
           {previewAssets.map((asset) => (
             <div key={asset.id} className="assetThumb">
               <div className="assetThumbImage">
-                {shotBindingLabel(assetShotBinding(asset)) ? (
-                  <strong className="assetBindingChip">{shotBindingLabel(assetShotBinding(asset))}</strong>
+                {assetNodeChipLabel(asset) ? (
+                  <strong className="assetBindingChip">{assetNodeChipLabel(asset)}</strong>
                 ) : null}
                 <img src={asset.localUrl} alt={asset.fileName} />
                 <button type="button" className="assetDelete" onClick={() => onDelete(asset.id)} title="Delete image">
@@ -7628,9 +7739,11 @@ function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags 
                 </button>
                 <span>{asset.fileName}</span>
               </div>
-              {asset.shotRole !== "insert_shot" ? (
-                <AssetTagsField asset={asset} onSave={(tags) => onUpdateTags?.(asset.id, tags)} />
-              ) : null}
+              <AssetTagsField
+                asset={asset}
+                kind={isInsert ? "insert" : "speaking"}
+                onSave={(tags) => onUpdateTags?.(asset.id, tags, isInsert ? "insert" : "speaking")}
+              />
             </div>
           ))}
         </div>
@@ -7641,8 +7754,12 @@ function ShotUploadCard({ type, count, assets, onUpload, onDelete, onUpdateTags 
   );
 }
 
-function AssetTagsField({ asset, onSave }) {
-  const savedTags = normalizeSpeakingTag(asset?.metadata?.speakingTag || asset?.metadata?.characterTags || "");
+function AssetTagsField({ asset, kind = "speaking", onSave }) {
+  const savedTags = normalizeSpeakingTag(
+    kind === "insert"
+      ? asset?.metadata?.insertTag || asset?.metadata?.tag || ""
+      : asset?.metadata?.speakingTag || asset?.metadata?.characterTags || ""
+  );
   const [draft, setDraft] = useState(savedTags);
 
   useEffect(() => {
@@ -7661,7 +7778,7 @@ function AssetTagsField({ asset, onSave }) {
 
   return (
     <label className="assetTagsField">
-      <span>Speaking tag</span>
+      <span>{kind === "insert" ? "Insert tag" : "Speaker tag"}</span>
       <input
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
@@ -7671,7 +7788,7 @@ function AssetTagsField({ asset, onSave }) {
             event.currentTarget.blur();
           }
         }}
-        placeholder="@name"
+        placeholder={kind === "insert" ? "@Clock" : "@name"}
       />
     </label>
   );

@@ -433,10 +433,6 @@ main {
   cursor: pointer;
 }
 
-.castVisualLibrary {
-  margin-top: 18px;
-}
-
 .shotUploadCard {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.045);
@@ -575,6 +571,7 @@ main {
   z-index: 2;
   display: grid;
   grid-template-columns: minmax(320px, 0.8fr) minmax(420px, 1.2fr);
+  align-items: start;
   gap: 22px;
   padding-right: clamp(120px, 14vw, 210px);
 }
@@ -590,6 +587,14 @@ main {
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     0 24px 70px rgba(0, 0, 0, 0.26);
   backdrop-filter: blur(20px) saturate(132%);
+}
+
+.characterNode {
+  grid-row: span 2;
+}
+
+.insertFrameNode {
+  grid-column: 2;
 }
 
 .nodeHeader {
@@ -699,10 +704,6 @@ main {
 
 .assetContextMenu button:hover {
   background: rgba(255, 255, 255, 0.09);
-}
-
-.visualFrameNode .castVisualLibrary {
-  margin-top: 0;
 }
 
 .visualFrameNode .shotUploadGrid {
@@ -988,6 +989,12 @@ main {
     padding-right: 0;
   }
 
+  .characterNode,
+  .insertFrameNode {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .assetInputNode,
   .assetNodeConnectors {
     display: none;
@@ -1000,6 +1007,8 @@ main {
 
 @media (max-width: 760px) {
   .visualFrameNode .shotUploadGrid,
+  .nodeUploadComposer,
+  .nodeUploadComposer.insertComposer,
   .productionStoryboardGrid,
   .deliveryFormatSelector,
   .deliveryPlatformsGrid,
@@ -2002,12 +2011,37 @@ label:has(textarea:disabled) {
   min-height: 38px;
 }
 
-.castVisualLibrary {
+.frameNodeBody {
   display: grid;
   gap: 12px;
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
+}
+
+.nodeUploadComposer {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(130px, 0.8fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(0, 0, 0, 0.12);
+}
+
+.nodeUploadComposer.insertComposer {
+  grid-template-columns: minmax(160px, 1fr) auto;
+}
+
+.nodeUploadComposer .field {
+  margin: 0;
+}
+
+.uploadComposerButton {
+  position: relative;
+  min-height: 42px;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .castSubheader {

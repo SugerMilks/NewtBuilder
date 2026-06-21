@@ -488,9 +488,26 @@ app.post("/api/episodes/:id/assets", upload.array("assets", 24), async (req, res
   const now = new Date().toISOString();
   const requestedShotRole = sanitizeShotRole(req.body.role || "general");
   const requestedRoleLabel = String(req.body.roleLabel || labelForShotRole(requestedShotRole)).trim();
+  const requestedSpeakingTag = sanitizeSpeakingTag(
+    req.body?.speakingTag ??
+      req.body?.characterTags ??
+      req.body?.metadata?.speakingTag ??
+      req.body?.metadata?.characterTags ??
+      ""
+  );
+  const requestedInsertTag = sanitizeSpeakingTag(
+    req.body?.insertTag ??
+      req.body?.tag ??
+      req.body?.metadata?.insertTag ??
+      req.body?.metadata?.tag ??
+      ""
+  );
   const assets = files.map((file) => {
     const binding = shotFilenameBinding(file.originalname);
     const shotRole = binding.shotRole && requestedShotRole !== "mask" ? binding.shotRole : requestedShotRole;
+    const metadata = {};
+    if (shotRole === "insert_shot" && requestedInsertTag) metadata.insertTag = requestedInsertTag;
+    if (shotRole !== "insert_shot" && requestedSpeakingTag) metadata.speakingTag = requestedSpeakingTag;
     return {
       id: randomUUID(),
       type: mediaTypeForMime(file.mimetype),
@@ -500,7 +517,8 @@ app.post("/api/episodes/:id/assets", upload.array("assets", 24), async (req, res
       storedFileName: file.filename,
       mimeType: file.mimetype || "application/octet-stream",
       localUrl: `/uploads/${file.filename}`,
-      createdAt: now
+      createdAt: now,
+      metadata
     };
   });
 
@@ -535,13 +553,33 @@ app.patch("/api/episodes/:id/assets/:assetId", async (req, res) => {
       asset.metadata?.characterTags ??
       ""
   );
+  const insertTag = sanitizeSpeakingTag(
+    req.body?.insertTag ??
+      req.body?.tag ??
+      req.body?.metadata?.insertTag ??
+      req.body?.metadata?.tag ??
+      asset.metadata?.insertTag ??
+      asset.metadata?.tag ??
+      ""
+  );
+  const hasInsertTagPatch =
+    Object.prototype.hasOwnProperty.call(req.body || {}, "insertTag") ||
+    Object.prototype.hasOwnProperty.call(req.body || {}, "tag") ||
+    Object.prototype.hasOwnProperty.call(req.body?.metadata || {}, "insertTag") ||
+    Object.prototype.hasOwnProperty.call(req.body?.metadata || {}, "tag");
+  const hasSpeakingTagPatch =
+    Object.prototype.hasOwnProperty.call(req.body || {}, "speakingTag") ||
+    Object.prototype.hasOwnProperty.call(req.body || {}, "characterTags") ||
+    Object.prototype.hasOwnProperty.call(req.body?.metadata || {}, "speakingTag") ||
+    Object.prototype.hasOwnProperty.call(req.body?.metadata || {}, "characterTags");
   const updatedAssets = current.assets.map((item) =>
     item.id === assetId
       ? normalizeAsset({
           ...item,
           metadata: {
             ...(item.metadata || {}),
-            speakingTag
+            ...(hasSpeakingTagPatch ? { speakingTag } : {}),
+            ...(hasInsertTagPatch ? { insertTag } : {})
           }
         })
       : item
@@ -566,7 +604,7 @@ app.patch("/api/episodes/:id/assets/:assetId", async (req, res) => {
     ...current,
     assets: remainingAssets,
     productionMap,
-    jobLog: appendLog(current.jobLog, `Updated speaking tag for ${asset.fileName}.`),
+    jobLog: appendLog(current.jobLog, `Updated ${hasInsertTagPatch ? "insert" : "speaking"} tag for ${asset.fileName}.`),
     updatedAt: new Date().toISOString()
   }), show);
   await writeEpisodes([updated, ...episodes.filter((item) => item.id !== updated.id)]);
