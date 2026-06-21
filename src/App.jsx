@@ -3374,9 +3374,10 @@ function defaultThumbnailBrief({ drafts = {}, selectedFormat = {}, showName = ""
   const cleanShowName = String(showName || "").trim() || "New Episode";
   const cleanEpisodeTitle = String(episodeTitle || drafts.youtube?.title || "").trim();
   const superText = cleanShowName;
+  const episodeText = cleanEpisodeTitle;
   const details = [
     `Show name for large super: ${cleanShowName}`,
-    cleanEpisodeTitle ? `Smaller episode display: ${cleanEpisodeTitle}` : "",
+    episodeText ? `Smaller episode display: ${episodeText}` : "",
     drafts.youtube?.description,
     (drafts.youtube?.tags || []).join(" ")
   ]
@@ -3385,6 +3386,7 @@ function defaultThumbnailBrief({ drafts = {}, selectedFormat = {}, showName = ""
     .trim();
   return {
     superText,
+    episodeText,
     prompt: `Create a ${aspect} thumbnail using the selected still frame. Make the show name the large dynamic super and include the episode name smaller as supporting text when provided.`,
     details,
     formats: [selectedAspect]
@@ -3876,6 +3878,13 @@ function FinalReviewPanel({
                 value={thumbnailBrief.superText}
                 onChange={(event) => updateThumbnailBrief("superText", event.target.value)}
                 placeholder={showName || "Show name"}
+              />
+            </Field>
+            <Field label="Smaller episode text">
+              <input
+                value={thumbnailBrief.episodeText || ""}
+                onChange={(event) => updateThumbnailBrief("episodeText", event.target.value)}
+                placeholder={episodeTitle || "Episode name"}
               />
             </Field>
             <Field label="Image 2 prompt">

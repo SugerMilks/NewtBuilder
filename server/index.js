@@ -5827,7 +5827,7 @@ function aiThumbnailPrompt({ episode, show, variant, title, format, thumbnailBri
   const thumbnailStyle = show.creative?.thumbnailStyle || "bold character moment, clean text, strong expression";
   const aspect = format?.promptAspect || "wide 16:9 YouTube thumbnail";
   const titleLine = title.replace(/\n/g, " ");
-  const episodeLine = compactText(episode.title || episode.drafts?.youtube?.title || "", 120);
+  const episodeLine = compactText(thumbnailBrief.episodeText || episode.title || episode.drafts?.youtube?.title || "", 120);
   const userInstruction =
     thumbnailBrief.prompt ||
     `Create a ${aspect} that includes the selected still frame, a dynamic super, and the provided episode information.`;
@@ -5902,6 +5902,7 @@ function sanitizeThumbnailBrief(brief = {}) {
   return {
     prompt: compactText(brief.prompt, 1000),
     superText: compactText(brief.superText, 140),
+    episodeText: compactText(brief.episodeText, 140),
     details: compactText(brief.details, 1600),
     stillFrame,
     formats
