@@ -127,6 +127,52 @@ const shortFormatDefaults = {
   audioSampleRate: 48000
 };
 
+const generatedOutputTypes = new Set([
+  "build_report",
+  "audio_mix",
+  "final_audio_mix",
+  "preview_video",
+  "final_video",
+  "finished_master",
+  "render_manifest",
+  "final_render_manifest",
+  "thumbnail_image",
+  "package_export",
+  "youtube_upload"
+]);
+
+function clearGeneratedOutputs(outputs = []) {
+  return (Array.isArray(outputs) ? outputs : []).filter((output) => !generatedOutputTypes.has(output?.type));
+}
+
+function resetGeneratedDraftArtifacts(drafts = {}) {
+  const next = {
+    ...(drafts || {}),
+    selectedThumbnailOutputId: "",
+    thumbnails: [],
+    finishingLayers: [],
+    delivery: {
+      ...(drafts?.delivery || {}),
+      platforms: {}
+    }
+  };
+  if (drafts?.youtube) {
+    next.youtube = {
+      ...drafts.youtube,
+      readyToPublish: false,
+      readyToPublishAt: "",
+      handoffChecklist: {
+        ...(drafts.youtube.handoffChecklist || {}),
+        thumbnailReady: false,
+        studioChecked: false,
+        approvalReady: false,
+        scheduledManually: false
+      }
+    };
+  }
+  return next;
+}
+
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use("/uploads", express.static(uploadsDir));
@@ -424,8 +470,10 @@ app.patch("/api/episodes/:id", async (req, res) => {
     return res.status(404).json({ error: "Episode not found." });
   }
   const show = shows.find((item) => item.id === current.showId) || shows[0];
-
-  const updated = await ensureAutomaticSpeakerMasksForEpisode(normalizeEpisode({
+  const scriptChanged =
+    Object.prototype.hasOwnProperty.call(req.body || {}, "scriptText") &&
+    String(req.body.scriptText || "") !== String(current.scriptText || "");
+  const nextEpisode = {
     ...current,
     ...req.body,
     id: current.id,
@@ -433,7 +481,13 @@ app.patch("/api/episodes/:id", async (req, res) => {
     createdAt: current.createdAt,
     format: req.body.format || current.format || show.shortFormat,
     updatedAt: new Date().toISOString()
-  }), show);
+  };
+  if (scriptChanged) {
+    nextEpisode.outputs = clearGeneratedOutputs(current.outputs);
+    nextEpisode.drafts = resetGeneratedDraftArtifacts(nextEpisode.drafts || current.drafts);
+  }
+
+  const updated = await ensureAutomaticSpeakerMasksForEpisode(normalizeEpisode(nextEpisode), show);
   await writeEpisodes([updated, ...episodes.filter((item) => item.id !== updated.id)]);
   res.json(updated);
 });
@@ -461,6 +515,8 @@ app.post("/api/episodes/:id/script", upload.single("script"), async (req, res) =
     productionMap: [],
     productionMapEditedAt: "",
     plan: emptyPlan(),
+    drafts: resetGeneratedDraftArtifacts(current.drafts),
+    outputs: clearGeneratedOutputs(current.outputs),
     assets: [
       ...current.assets,
       {
@@ -685,6 +741,7 @@ app.post("/api/episodes/:id/build-plan", async (req, res) => {
     productionMap,
     productionMapEditedAt: "",
     drafts,
+    outputs: clearGeneratedOutputs(current.outputs),
     status: plan.wordCount ? "planned" : "draft",
     currentStage: "Planning",
     approvals: refreshApprovals(current.approvals, show.automation),
