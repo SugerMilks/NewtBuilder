@@ -87,11 +87,11 @@ After the Preview section renders a final video, the Composite section opens the
 - Click `Final Render` to create a new finished master file while preserving the original final render.
 - Thumbnail generation, package export, and YouTube private draft upload prefer the finished master when one exists.
 
-## YouTube Promotion Prep
+## Delivery Promotion Prep
 
-Promotion Prep is inside YouTube Prep. It drafts and exports YouTube-focused copy without posting anything outside the app.
+Promotion Prep is inside Delivery Prep. It drafts and exports YouTube-focused copy without posting anything outside the app.
 
-Reusable promotion templates live in Settings. Supported tokens:
+Reusable promotion templates live with the show defaults. Supported tokens:
 
 ```text
 {{title}}
@@ -109,7 +109,7 @@ promotion-packet.json
 promotion-packet.txt
 ```
 
-External social platform posting is intentionally parked for now. The current app flow stays focused on complete episode creation, thumbnail generation, YouTube prep, and private YouTube draft upload.
+External social platform posting is intentionally parked for now. The current app flow stays focused on complete episode creation, thumbnail generation, Delivery Prep, and private YouTube draft upload.
 
 ## Shot Speaking Tags
 

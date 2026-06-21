@@ -76,9 +76,9 @@ const automationControls = [
   },
   {
     key: "draftYoutubeMetadata",
-    label: "YouTube prep",
+    label: "Delivery prep",
     phase: "Publishing",
-    description: "Prepare title, description, tags, checklist, and promotion copy.",
+    description: "Prepare platform metadata, checklist, and promotion copy.",
     icon: Youtube
   },
   {
@@ -1536,7 +1536,7 @@ export default function App() {
       setEpisodeDraft(structuredClone(episode));
       setStatus(
         nextDrafts.youtube
-          ? "YouTube prep saved. Project YouTube defaults updated for future episodes."
+          ? "Delivery prep saved. Project YouTube defaults updated for future episodes."
           : "Publishing prep saved."
       );
       return episode;
@@ -5281,7 +5281,7 @@ function FinalPackagePanel({
                         <textarea
                           value={draft.description || ""}
                           rows={3}
-                          placeholder={youtubeForm.description || "Auto from setup and YouTube prep"}
+                          placeholder={youtubeForm.description || "Auto from setup and Delivery Prep"}
                           onChange={(event) => updatePlatform(platform.key, { description: event.target.value })}
                         />
                       </Field>

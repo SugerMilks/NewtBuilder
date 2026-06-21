@@ -4880,7 +4880,7 @@ async function buildLaunchReadiness({ episode, show }) {
     "metadata_title",
     "YouTube title",
     Boolean(title),
-    title ? `${Math.min(title.length, 100)}/100 characters` : "Add a title in YouTube Prep"
+    title ? `${Math.min(title.length, 100)}/100 characters` : "Add a title in Delivery Prep"
   );
   add(
     "youtube",
