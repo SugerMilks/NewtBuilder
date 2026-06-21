@@ -384,7 +384,7 @@ app.post("/api/episodes", async (req, res) => {
   const inheritFromEpisodeId = cleanId(req.body.inheritFromEpisodeId);
   const templateEpisode =
     episodes.find((episode) => episode.id === inheritFromEpisodeId && episode.showId === show.id) ||
-    episodes.find((episode) => episode.showId === show.id);
+    newestEpisodeForShow(episodes, show.id);
   const inheritedAssets = req.body.inheritAssets === false
     ? []
     : await cloneEpisodeAssetsForNewEpisode(templateEpisode);
@@ -2185,6 +2185,19 @@ function emptyDrafts(show) {
       insert: false
     }
   };
+}
+
+function newestEpisodeForShow(episodes = [], showId = "") {
+  return [...episodes]
+    .filter((episode) => episode.showId === showId)
+    .sort((a, b) => episodeUpdatedTime(b) - episodeUpdatedTime(a))[0];
+}
+
+function episodeUpdatedTime(episode = {}) {
+  const updated = Date.parse(episode.updatedAt || "");
+  if (Number.isFinite(updated)) return updated;
+  const created = Date.parse(episode.createdAt || "");
+  return Number.isFinite(created) ? created : 0;
 }
 
 async function cloneEpisodeAssetsForNewEpisode(templateEpisode) {
