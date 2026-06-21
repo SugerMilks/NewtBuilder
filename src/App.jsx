@@ -2353,7 +2353,16 @@ export default function App() {
   const renderReady = Boolean(baseFinalOutput?.localUrl);
   const compositeReady = Boolean(finishedMasterOutput?.localUrl);
   const deliveryAccessible = Boolean(compositeReady);
-  const deliveryReady = Boolean(deliveryAccessible && (finalOutput?.localUrl || thumbnailOutputs.length));
+  const selectedDeliveryThumbnailId = drafts.selectedThumbnailOutputId || thumbnailOutputs.find((thumb) => thumb.isSelected)?.id || "";
+  const savedDeliveryPlatforms = drafts.delivery?.platforms && typeof drafts.delivery.platforms === "object"
+    ? drafts.delivery.platforms
+    : {};
+  const deliveryPlatformsReady = Object.values(savedDeliveryPlatforms).some((platform) => platform?.enabled);
+  const youtubeDraftUploaded = youtubeUploadOutputs.some((output) => output.videoId);
+  const deliveryReady = Boolean(
+    deliveryAccessible &&
+      (youtubeDraftUploaded || (selectedDeliveryThumbnailId && deliveryPlatformsReady))
+  );
   const workflowState = workflowSections.map((section) => {
     const state = {
       setup: { enabled: true, complete: setupReady, unlockHint: "creating a project" },
