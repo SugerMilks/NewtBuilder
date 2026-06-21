@@ -206,6 +206,20 @@ const youtubeHandoffChecks = [
   ["scheduledManually", "Scheduled/published manually"]
 ];
 
+const generatedClientOutputTypes = new Set([
+  "build_report",
+  "audio_mix",
+  "final_audio_mix",
+  "preview_video",
+  "final_video",
+  "finished_master",
+  "render_manifest",
+  "final_render_manifest",
+  "thumbnail_image",
+  "package_export",
+  "youtube_upload"
+]);
+
 const youtubePromotionDefaults = {
   communityPost: "",
   pinnedComment: ""
@@ -536,6 +550,38 @@ function emptyClientPlan() {
     warnings: [],
     suggestions: []
   };
+}
+
+function clearGeneratedClientOutputs(outputs = []) {
+  return (Array.isArray(outputs) ? outputs : []).filter((output) => !generatedClientOutputTypes.has(output?.type));
+}
+
+function resetGeneratedClientDraftArtifacts(drafts = {}) {
+  const next = {
+    ...(drafts || {}),
+    selectedThumbnailOutputId: "",
+    thumbnails: [],
+    finishingLayers: [],
+    delivery: {
+      ...(drafts?.delivery || {}),
+      platforms: {}
+    }
+  };
+  if (drafts?.youtube) {
+    next.youtube = {
+      ...drafts.youtube,
+      readyToPublish: false,
+      readyToPublishAt: "",
+      handoffChecklist: {
+        ...(drafts.youtube.handoffChecklist || {}),
+        thumbnailReady: false,
+        studioChecked: false,
+        approvalReady: false,
+        scheduledManually: false
+      }
+    };
+  }
+  return next;
 }
 
 function episodeOutputsOfType(episode, type) {
@@ -1584,7 +1630,7 @@ export default function App() {
 
   async function uploadYoutubeDraft(nextDrafts = null) {
     if (!activeEpisode) return;
-    const existingUpload = (activeEpisode.outputs || []).find((output) => output.type === "youtube_upload" && output.videoId);
+    const existingUpload = episodeOutputs.find((output) => output.type === "youtube_upload" && output.videoId);
     const ok = globalThis.confirm?.(
       existingUpload?.videoId
         ? `Upload a new private YouTube draft? The existing draft ${existingUpload.videoId} will stay on YouTube.`
@@ -2118,6 +2164,8 @@ export default function App() {
         plan: emptyClientPlan(),
         productionMap: [],
         productionMapEditedAt: "",
+        outputs: clearGeneratedClientOutputs(prev.outputs),
+        drafts: resetGeneratedClientDraftArtifacts(prev.drafts),
         updatedAt: new Date().toISOString()
       };
     });
@@ -2251,9 +2299,18 @@ export default function App() {
   const integrations = health?.integrations || {};
   const safety = health?.safety || { publishingEnabled: false, mode: "local-test-only" };
   const youtubeAuth = health?.youtube || {};
+  const draftIsActiveEpisode = Boolean(episodeDraft?.id && episodeDraft.id === activeEpisode?.id);
+  const episodeView = draftIsActiveEpisode
+    ? {
+        ...(activeEpisode || {}),
+        ...(episodeDraft || {})
+      }
+    : activeEpisode;
+  const episodeOutputs = episodeView?.outputs || [];
+  const episodeAssets = episodeView?.assets || [];
   const selectedFormat = episodeDraft?.format || activeEpisode?.format || showDraft?.shortFormat || activeShow?.shortFormat || {};
   const plan = episodeDraft?.plan || activeEpisode?.plan || {};
-  const drafts = episodeDraft?.id === activeEpisode?.id ? episodeDraft?.drafts || {} : activeEpisode?.drafts || {};
+  const drafts = episodeView?.drafts || {};
   const assetNodeConnections = normalizeAssetNodeConnections(drafts.assetNodeConnections);
   const coreAssetNodesConnected = Boolean(assetNodeConnections.character && assetNodeConnections.visual);
   const setupApproved = Boolean(drafts.workflow?.setupApproved);
@@ -2268,27 +2325,27 @@ export default function App() {
     cta: showDraft?.creative?.defaultCta || activeShow?.creative?.defaultCta || ""
   };
   const productionMap = episodeDraft?.productionMap || activeEpisode?.productionMap || [];
-  const previewOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "preview_video");
+  const previewOutputs = episodeOutputs.filter((output) => output.type === "preview_video");
   const previewOutput = previewOutputs[0] || null;
-  const finalOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "final_video");
+  const finalOutputs = episodeOutputs.filter((output) => output.type === "final_video");
   const baseFinalOutput = finalOutputs[0] || null;
-  const finishedMasterOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "finished_master");
+  const finishedMasterOutputs = episodeOutputs.filter((output) => output.type === "finished_master");
   const finishedMasterOutput = finishedMasterOutputs[0] || null;
   const finalOutput = finishedMasterOutput || baseFinalOutput;
-  const manifestOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "render_manifest");
-  const finalManifestOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "final_render_manifest");
-  const audioOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "audio_mix");
+  const manifestOutputs = episodeOutputs.filter((output) => output.type === "render_manifest");
+  const finalManifestOutputs = episodeOutputs.filter((output) => output.type === "final_render_manifest");
+  const audioOutputs = episodeOutputs.filter((output) => output.type === "audio_mix");
   const audioOutput = audioOutputs[0] || null;
-  const finalAudioOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "final_audio_mix");
-  const reportOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "build_report");
-  const packageOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "package_export");
-  const youtubeUploadOutputs = (activeEpisode?.outputs || []).filter((output) => output.type === "youtube_upload");
+  const finalAudioOutputs = episodeOutputs.filter((output) => output.type === "final_audio_mix");
+  const reportOutputs = episodeOutputs.filter((output) => output.type === "build_report");
+  const packageOutputs = episodeOutputs.filter((output) => output.type === "package_export");
+  const youtubeUploadOutputs = episodeOutputs.filter((output) => output.type === "youtube_upload");
   const thumbnailOutputs = visibleThumbnailCandidates(
-    (activeEpisode?.outputs || []).filter((output) => output.type === "thumbnail_image")
+    episodeOutputs.filter((output) => output.type === "thumbnail_image")
   );
   const renderReadiness = buildRenderReadiness({
     productionMap,
-    assets: episodeDraft?.assets || activeEpisode?.assets || [],
+    assets: episodeAssets,
     audioOutput,
     previewOutput,
     selectedFormat,
@@ -2299,31 +2356,31 @@ export default function App() {
 
   const assetCounts = useMemo(() => {
     const counts = {};
-    for (const asset of activeEpisode?.assets || []) {
+    for (const asset of episodeAssets) {
       const role = asset.shotRole || "general";
       counts[role] = (counts[role] || 0) + 1;
     }
     return counts;
-  }, [activeEpisode]);
+  }, [episodeAssets]);
   const assetsByRole = useMemo(() => {
     const groups = {};
     for (const type of shotAssetTypes) {
       groups[type.role] = [];
     }
-    for (const asset of activeEpisode?.assets || []) {
+    for (const asset of episodeAssets) {
       const role = asset.shotRole || "general";
       if (!groups[role]) groups[role] = [];
       groups[role].push(asset);
     }
     return groups;
-  }, [activeEpisode]);
+  }, [episodeAssets]);
   const visualAssets = useMemo(
-    () => (activeEpisode?.assets || []).filter((asset) => asset.type === "image" && asset.shotRole !== "mask"),
-    [activeEpisode]
+    () => episodeAssets.filter((asset) => asset.type === "image" && asset.shotRole !== "mask"),
+    [episodeAssets]
   );
   const maskAssets = useMemo(
-    () => (activeEpisode?.assets || []).filter((asset) => asset.type === "image" && asset.shotRole === "mask"),
-    [activeEpisode]
+    () => episodeAssets.filter((asset) => asset.type === "image" && asset.shotRole === "mask"),
+    [episodeAssets]
   );
   const scriptDraftText = episodeDraft?.scriptText || activeEpisode?.scriptText || "";
   const liveScriptMetrics = scriptMetrics(scriptDraftText, showDraft?.shortFormat?.wordsPerMinute || activeShow?.shortFormat?.wordsPerMinute || 145);
@@ -2654,8 +2711,8 @@ export default function App() {
                     <Pill tone={castReady ? "good" : "warn"}>
                       {castReady ? "Cast ready" : "Add voice"}
                     </Pill>
-                    <Pill tone={(activeEpisode?.assets || []).some((asset) => asset.type === "image") ? "good" : "neutral"}>
-                      {(activeEpisode?.assets || []).filter((asset) => asset.type === "image").length} images
+                    <Pill tone={episodeAssets.some((asset) => asset.type === "image") ? "good" : "neutral"}>
+                      {episodeAssets.filter((asset) => asset.type === "image").length} images
                     </Pill>
                     <Pill tone={coreAssetNodesConnected ? "good" : "warn"}>
                       {coreAssetNodesConnected ? "INPUT linked" : "Link nodes"}
