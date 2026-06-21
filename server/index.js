@@ -5157,17 +5157,22 @@ function youtubePackageMetadata({ episode, show, finalVideo, selectedThumbnail, 
 }
 
 function campaignPackageText(metadata) {
+  const platformLines = deliveryPlatformTextLines(metadata.campaign?.social || []);
   return [
     "YouTube Community post:",
     metadata.youtube.promotion.communityPost || "",
     "",
     "YouTube pinned comment:",
-    metadata.youtube.promotion.pinnedComment || ""
+    metadata.youtube.promotion.pinnedComment || "",
+    "",
+    "Platform delivery prep:",
+    ...platformLines
   ].join("\n");
 }
 
 function promotionPacketMetadata(metadata) {
   const checks = promotionPacketChecks(metadata);
+  const platforms = Array.isArray(metadata.campaign?.social) ? metadata.campaign.social : [];
   return {
     createdAt: metadata.createdAt,
     show: metadata.show,
@@ -5181,14 +5186,45 @@ function promotionPacketMetadata(metadata) {
       communityPost: metadata.youtube.promotion.communityPost || "",
       pinnedComment: metadata.youtube.promotion.pinnedComment || ""
     },
+    platforms,
     checks,
     manualSequence: [
       "Review the final render and selected thumbnail.",
       "Confirm the private YouTube draft metadata in YouTube Studio.",
       "Paste the YouTube Community post when the video is ready for audience attention.",
-      "Paste the pinned comment after the video is live or scheduled."
+      "Paste the pinned comment after the video is live or scheduled.",
+      platforms.length
+        ? "Use the platform delivery prep for each selected social destination."
+        : "No extra platform delivery destinations were selected."
     ]
   };
+}
+
+function deliveryPlatformTextLines(platforms = []) {
+  const enabledPlatforms = Array.isArray(platforms) ? platforms.filter(Boolean) : [];
+  if (!enabledPlatforms.length) return ["No additional platforms selected."];
+  return enabledPlatforms.flatMap((platform, index) => [
+    `${index + 1}. ${deliveryPlatformLabel(platform.platform)}`,
+    `Title/caption: ${platform.title || ""}`,
+    `Description: ${platform.description || ""}`,
+    `Hashtags: ${platform.hashtags || ""}`,
+    `Privacy/state: ${platform.privacy || ""}`,
+    `Notes: ${platform.notes || ""}`,
+    ""
+  ]);
+}
+
+function deliveryPlatformLabel(platformKey = "") {
+  return {
+    youtube: "YouTube",
+    youtubeStories: "YouTube Stories",
+    instagram: "Instagram",
+    instagramStories: "Instagram Stories",
+    tiktok: "TikTok",
+    linkedin: "LinkedIn",
+    vimeo: "Vimeo",
+    x: "X"
+  }[String(platformKey || "")] || String(platformKey || "Platform");
 }
 
 function promotionPacketChecks(metadata) {
@@ -5239,6 +5275,9 @@ function promotionPacketText(metadata) {
     "",
     "Pinned Comment:",
     packet.youtube.pinnedComment || "",
+    "",
+    "Platform Delivery Prep:",
+    ...deliveryPlatformTextLines(packet.platforms),
     "",
     "Manual Sequence:",
     ...packet.manualSequence.map((item, index) => `${index + 1}. ${item}`)
