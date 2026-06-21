@@ -4287,7 +4287,9 @@ function FinishingLayersPanel({
   useEffect(() => {
     function handleFinishingKeys(event) {
       const panel = finishingPanelRef.current;
-      if (!panel?.open) return;
+      if (!panel) return;
+      const eventTarget = event.target instanceof Node ? event.target : null;
+      if (eventTarget && !panel.contains(eventTarget) && eventTarget !== document.body) return;
       if (isTextEditingTarget(event.target)) return;
 
       if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === "z") {
@@ -4434,13 +4436,17 @@ function FinishingLayersPanel({
   }
 
   return (
-    <details className="reviewDetails finishingLayersPanel" ref={finishingPanelRef}>
-      <summary>
-        <span>Finishing Layers</span>
+    <section className="finishingLayersPanel compositeNodeCanvas" ref={finishingPanelRef}>
+      <div className="compositeNodeHeader">
+        <div>
+          <span className="eyebrow">Composite Node</span>
+          <h3>Finishing Layers</h3>
+          <p>Stack graphics, video, music, and audio on the completed render before delivery.</p>
+        </div>
         <Pill tone={finishedMasterOutput ? "good" : hasLayers ? "neutral" : "warn"}>
           {finishedMasterOutput ? "master ready" : hasLayers ? `${draftLayers.length} layers` : "optional"}
         </Pill>
-      </summary>
+      </div>
       <div className="finishingBody">
         <div className="finishingHeader">
           <div>
@@ -4843,7 +4849,7 @@ function FinishingLayersPanel({
             type="button"
             onClick={restoreUndoSnapshot}
             disabled={!undoCount || busy}
-            title="Undo last finishing layer edit. Command-Z also works while this section is open."
+            title="Undo last finishing layer edit. Command-Z also works while Composite is active."
           >
             <Undo2 size={16} />
             Undo
@@ -4860,7 +4866,7 @@ function FinishingLayersPanel({
           ) : null}
         </div>
       </div>
-    </details>
+    </section>
   );
 }
 
