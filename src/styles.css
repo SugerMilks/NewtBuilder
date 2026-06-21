@@ -852,6 +852,10 @@ main {
 }
 
 .assetContextMenu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   border: 0;
   padding: 12px 14px;
   color: var(--text);
@@ -862,6 +866,11 @@ main {
 
 .assetContextMenu button:hover {
   background: rgba(255, 255, 255, 0.09);
+}
+
+.assetContextMenu button.connected {
+  color: var(--jade);
+  background: rgba(109, 208, 165, 0.08);
 }
 
 .visualFrameNode .shotUploadGrid {

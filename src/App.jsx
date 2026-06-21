@@ -750,7 +750,7 @@ function normalizeAssetNodeConnections(value = {}) {
   }, {});
 }
 
-function AssetNodeCanvas({ children, connections = {}, onAddCharacter, onFocusNode }) {
+function AssetNodeCanvas({ children, connections = {}, onConnectNode, onFocusNode }) {
   const [menu, setMenu] = useState(null);
   const normalizedConnections = normalizeAssetNodeConnections(connections);
   const requiredAssetConnections = ["character", "visual"];
@@ -771,6 +771,12 @@ function AssetNodeCanvas({ children, connections = {}, onAddCharacter, onFocusNo
     });
   }
 
+  function selectNode(nodeKey, nodeId) {
+    if (!normalizedConnections[nodeKey]) onConnectNode?.(nodeKey);
+    onFocusNode?.(nodeId);
+    setMenu(null);
+  }
+
   return (
     <div className="assetNodeCanvas" onContextMenu={openMenu} onClick={() => setMenu(null)}>
       <div className="assetNodeConnectors" aria-hidden="true">
@@ -788,14 +794,17 @@ function AssetNodeCanvas({ children, connections = {}, onAddCharacter, onFocusNo
       </article>
       {menu ? (
         <div className="assetContextMenu" style={{ left: menu.x, top: menu.y }} onClick={(event) => event.stopPropagation()}>
-          <button type="button" onClick={() => { onAddCharacter?.(); setMenu(null); }}>
-            Character node
+          <button type="button" className={normalizedConnections.character ? "connected" : ""} onClick={() => selectNode("character", "character-node")}>
+            <span>Character node</span>
+            {normalizedConnections.character ? <Check size={14} /> : null}
           </button>
-          <button type="button" onClick={() => { onFocusNode?.("visual-frame-node"); setMenu(null); }}>
-            Visual Frame node
+          <button type="button" className={normalizedConnections.visual ? "connected" : ""} onClick={() => selectNode("visual", "visual-frame-node")}>
+            <span>Visual Frame node</span>
+            {normalizedConnections.visual ? <Check size={14} /> : null}
           </button>
-          <button type="button" onClick={() => { onFocusNode?.("insert-frame-node"); setMenu(null); }}>
-            Insert Frame node
+          <button type="button" className={normalizedConnections.insert ? "connected" : ""} onClick={() => selectNode("insert", "insert-frame-node")}>
+            <span>Insert Frame node</span>
+            {normalizedConnections.insert ? <Check size={14} /> : null}
           </button>
         </div>
       ) : null}
@@ -2590,7 +2599,7 @@ export default function App() {
                 </div>
                 <AssetNodeCanvas
                   connections={assetNodeConnections}
-                  onAddCharacter={addCharacter}
+                  onConnectNode={toggleAssetNodeConnection}
                   onFocusNode={(nodeId) => document.getElementById(nodeId)?.scrollIntoView({ behavior: "smooth", block: "center" })}
                 >
                   <article className="assetNode characterNode" id="character-node">
