@@ -353,6 +353,20 @@ function formatSeconds(seconds = 0) {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
+function scriptMetrics(text = "", wordsPerMinute = 145) {
+  const words = String(text || "").trim().match(/\b[\w'-]+\b/g) || [];
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const seconds = words.length && wordsPerMinute ? Math.round((words.length / Math.max(1, wordsPerMinute)) * 60) : 0;
+  return {
+    wordCount: words.length,
+    lineCount: lines.length,
+    estimatedSeconds: seconds
+  };
+}
+
 function statusTone(status) {
   if (status === "approved" || status === "auto") return "good";
   if (status === "blocked") return "danger";
@@ -1379,6 +1393,7 @@ export default function App() {
       );
       if (!shouldRebuild) return;
     }
+    setBusyAction("build-plan");
     setBusy(true);
     try {
       const episode = await request(`/api/episodes/${episodeDraft.id}/build-plan`, {
@@ -1392,6 +1407,7 @@ export default function App() {
     } catch (error) {
       setStatus(error.message);
     } finally {
+      setBusyAction("");
       setBusy(false);
     }
   }
@@ -2357,6 +2373,8 @@ export default function App() {
     () => (activeEpisode?.assets || []).filter((asset) => asset.type === "image" && asset.shotRole === "mask"),
     [activeEpisode]
   );
+  const scriptDraftText = episodeDraft?.scriptText || activeEpisode?.scriptText || "";
+  const liveScriptMetrics = scriptMetrics(scriptDraftText, showDraft?.shortFormat?.wordsPerMinute || activeShow?.shortFormat?.wordsPerMinute || 145);
   const setupComplete = Boolean(
     activeShow &&
       showDraft?.name?.trim() &&
@@ -2787,45 +2805,72 @@ export default function App() {
             )}
 
             {activeWorkflowSection.key === "script" && (
-            <CollapsiblePanel
-              className="scriptPanel"
-              eyebrow="Script"
-              title="Upload & Build Plan"
-              defaultOpen
-              action={
-                <label className="secondaryButton">
-                  <Upload size={17} />
-                  Upload Script
-                  <input
-                    type="file"
-                    accept=".pdf,.txt,.md,.rtf,application/pdf,text/plain,text/markdown"
-                    onChange={(event) => handleScriptFile(event.target.files?.[0])}
+              <section className="scriptNodeCanvas">
+                <article className="scriptInputNode">
+                  <div className="nodeHeader scriptNodeHeader">
+                    <div>
+                      <span className="eyebrow">Script Node</span>
+                      <strong>Episode Script</strong>
+                    </div>
+                    <div className="buttonRow">
+                      <Pill tone={scriptDraftText.trim() ? "good" : "neutral"}>
+                        {liveScriptMetrics.wordCount} words
+                      </Pill>
+                      <Pill tone={planBuilt ? "good" : "neutral"}>
+                        {planBuilt ? "plan built" : `${liveScriptMetrics.lineCount} lines`}
+                      </Pill>
+                      <label className="secondaryButton">
+                        <Upload size={17} />
+                        Upload Script
+                        <input
+                          type="file"
+                          accept=".pdf,.txt,.md,.rtf,application/pdf,text/plain,text/markdown"
+                          onChange={(event) => {
+                            handleScriptFile(event.target.files?.[0]);
+                            event.target.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {!episodeDraft ? (
+                    <div className="notice">
+                      <ChevronRight size={17} />
+                      Create or select an episode before writing the script.
+                    </div>
+                  ) : null}
+
+                  <textarea
+                    className="scriptArea scriptNodeEditor"
+                    value={scriptDraftText}
+                    onChange={(event) => updateEpisodeDraft(["scriptText"], event.target.value)}
+                    placeholder="Paste or upload an episode script..."
+                    disabled={!episodeDraft}
                   />
-                </label>
-              }
-            >
-              {!episodeDraft && (
-                <div className="notice">
-                  <ChevronRight size={17} />
-                  No episode yet. Upload a script, upload shot images, or click New Episode to start a draft.
-                </div>
-              )}
 
-              <textarea
-                className="scriptArea"
-                value={episodeDraft?.scriptText || ""}
-                onChange={(event) => updateEpisodeDraft(["scriptText"], event.target.value)}
-                placeholder="Paste or upload an episode script..."
-                disabled={!episodeDraft}
-              />
-
-              <div className="buttonRow">
-                <button className="primaryButton" onClick={buildPlan} disabled={!episodeDraft || busy}>
-                  <Sparkles size={18} />
-                  Build Plan
-                </button>
-              </div>
-            </CollapsiblePanel>
+                  <div className="scriptNodeFooter">
+                    <div className="metrics compactMetrics">
+                      <Metric icon={FileText} label="Script" value={`${liveScriptMetrics.wordCount} words`} />
+                      <Metric icon={ListChecks} label="Lines" value={liveScriptMetrics.lineCount} />
+                      <Metric icon={Play} label="Estimate" value={formatSeconds(plan.estimatedSeconds || liveScriptMetrics.estimatedSeconds)} />
+                    </div>
+                    <button
+                      className="primaryButton"
+                      onClick={buildPlan}
+                      disabled={!episodeDraft || busy || !scriptDraftText.trim()}
+                    >
+                      {busyAction === "build-plan" ? <RefreshCw className="spin" size={18} /> : <Sparkles size={18} />}
+                      Build Plan
+                    </button>
+                  </div>
+                </article>
+                <article className={`scriptHandoffNode ${planBuilt ? "ready" : ""}`}>
+                  <span className="nodePort input" />
+                  <strong>STORYBOARD + PREVIEW</strong>
+                  <small>{planBuilt ? `${productionMap.length} frames ready` : "Waiting for Build Plan"}</small>
+                </article>
+              </section>
             )}
 
             {activeWorkflowSection.key === "storyboard" && (

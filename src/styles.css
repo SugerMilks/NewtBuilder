@@ -743,6 +743,117 @@ main {
   grid-template-columns: repeat(2, minmax(180px, 1fr));
 }
 
+/* Script canvas */
+.scriptNodeCanvas {
+  position: relative;
+  grid-column: 1 / -1;
+  min-height: 520px;
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(180px, 240px);
+  gap: 24px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 28px;
+  padding: 26px min(32px, 4vw);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(216, 198, 255, 0.16), transparent 30%),
+    radial-gradient(circle at 84% 72%, rgba(109, 208, 165, 0.11), transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    rgba(0, 0, 0, 0.23);
+  background-size: auto, auto, 54px 54px, 54px 54px, auto;
+}
+
+.scriptNodeCanvas::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  right: 188px;
+  top: 50%;
+  width: clamp(180px, 26vw, 420px);
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(109, 208, 165, 0.66), rgba(247, 242, 231, 0.78));
+  box-shadow: 0 0 22px rgba(109, 208, 165, 0.30);
+  pointer-events: none;
+}
+
+.scriptInputNode,
+.scriptHandoffNode {
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 24px 70px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(20px) saturate(132%);
+}
+
+.scriptInputNode {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.scriptNodeHeader {
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.scriptNodeHeader .buttonRow {
+  justify-content: flex-end;
+}
+
+.scriptNodeEditor {
+  min-height: 320px;
+  margin: 0;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.scriptNodeFooter {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.compactMetrics {
+  justify-content: flex-start;
+}
+
+.compactMetrics .metric {
+  min-width: 118px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.scriptHandoffNode {
+  display: grid;
+  place-items: center;
+  min-height: 156px;
+  padding: 18px;
+  text-align: center;
+}
+
+.scriptHandoffNode.ready {
+  color: #041d14;
+  background: linear-gradient(150deg, rgba(231, 255, 244, 0.96), rgba(161, 238, 202, 0.88));
+}
+
+.scriptHandoffNode strong {
+  font-size: 17px;
+  letter-spacing: 0;
+}
+
+.scriptHandoffNode small {
+  color: inherit;
+  opacity: 0.72;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 /* Storyboard canvas */
 .productionStoryboardGrid {
   display: grid;
@@ -1029,8 +1140,14 @@ main {
   }
 
   .assetInputNode,
-  .assetNodeConnectors {
+  .assetNodeConnectors,
+  .scriptNodeCanvas::after {
     display: none;
+  }
+
+  .scriptNodeCanvas {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .productionStoryboardGrid {
@@ -1042,6 +1159,7 @@ main {
   .visualFrameNode .shotUploadGrid,
   .nodeUploadComposer,
   .nodeUploadComposer.insertComposer,
+  .scriptNodeFooter,
   .productionStoryboardGrid,
   .deliveryFormatSelector,
   .deliveryPlatformsGrid,
