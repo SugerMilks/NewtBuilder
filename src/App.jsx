@@ -612,7 +612,6 @@ function ShowDashboard({
   busy,
   onCreateEpisode,
   onOpenEpisode,
-  onOpenEpisodeReview,
   onRenameEpisode
 }) {
   if (!show) {
@@ -662,10 +661,7 @@ function ShowDashboard({
                 </div>
                 <div className="buttonRow">
                   <button className="primaryButton" type="button" onClick={() => onOpenEpisode(episode.id)} disabled={busy}>
-                    Open Studio
-                  </button>
-                  <button className="secondaryButton" type="button" onClick={() => onOpenEpisodeReview(episode.id)} disabled={busy}>
-                    Open Review
+                    Open Workspace
                   </button>
                   <button className="iconButton" type="button" onClick={() => onRenameEpisode(episode)} disabled={busy} title="Rename episode">
                     <Pencil size={16} />
@@ -991,13 +987,6 @@ export default function App() {
     if (!episodeId) return;
     setActiveEpisodeId(episodeId);
     setActiveTab("");
-    setAppView("episode");
-  }
-
-  function openEpisodeReview(episodeId) {
-    if (!episodeId) return;
-    setActiveEpisodeId(episodeId);
-    setActiveTab("preview");
     setAppView("episode");
   }
 
@@ -2389,7 +2378,6 @@ export default function App() {
             busy={busy}
             onCreateEpisode={createEpisode}
             onOpenEpisode={openEpisode}
-            onOpenEpisodeReview={openEpisodeReview}
             onRenameEpisode={renameEpisode}
           />
         )}
