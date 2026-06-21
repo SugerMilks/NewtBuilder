@@ -2463,12 +2463,16 @@ export default function App() {
   const libraryView = appView === "library";
   const showDashboardView = appView === "show";
   const workspaceView = appView === "episode";
+  const workspaceEpisodeNumberLabel = activeEpisodeNumber ? `Episode ${activeEpisodeNumber}` : "Episode";
+  const workspaceEpisodeLabel = activeEpisode
+    ? `${workspaceEpisodeNumberLabel}${activeEpisode.title ? ` / ${activeEpisode.title}` : ""}`
+    : "No episode selected";
   const headerTitle = libraryView ? "NewtBuilder" : activeShow?.name || "Show";
   const headerSubtitle = libraryView
     ? "Show Library"
     : showDashboardView
       ? "Episodes"
-      : `${activeWorkflowSection?.label || "Setup"}${activeEpisode?.title ? ` / ${activeEpisode.title}` : ""}`;
+      : `${workspaceEpisodeLabel} / ${activeWorkflowSection?.label || "Setup"}`;
   const workflowRailStatus = workspaceView
     ? [
         { icon: Gauge, label: "Format", value: selectedFormat.resolution || selectedFormat.aspectRatio || "Not set" },
