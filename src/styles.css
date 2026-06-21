@@ -1936,63 +1936,6 @@ label:has(textarea:disabled) {
   background: var(--jade);
 }
 
-.automationRunbookPanel {
-  margin-bottom: 14px;
-}
-
-.automationRunbookBody {
-  display: grid;
-  gap: 12px;
-  padding: 12px;
-}
-
-.automationRunbookGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
-}
-
-.automationRunbookItem {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 9px;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #191914;
-}
-
-.automationRunbookItem.auto {
-  border-color: rgba(109, 208, 165, 0.28);
-  background: rgba(109, 208, 165, 0.06);
-}
-
-.automationRunbookItem svg {
-  color: var(--blue);
-}
-
-.automationRunbookItem.auto svg {
-  color: var(--jade);
-}
-
-.automationRunbookItem span {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.automationRunbookItem strong {
-  display: block;
-  margin-top: 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .helperText {
   color: var(--muted);
   line-height: 1.45;
@@ -4890,7 +4833,6 @@ label:has(textarea:disabled) {
   .promotionCopyGrid,
   .showCardGrid,
   .episodeCardGrid,
-  .automationRunbookGrid,
   .launchReadinessGrid,
   .readinessColumns,
   .finalReviewGrid,

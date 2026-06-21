@@ -2789,7 +2789,6 @@ export default function App() {
             ) : (
               <FinalReviewPanel
                 mode={activeWorkflowKey}
-                audioOutput={audioOutput}
                 previewOutput={previewOutput}
                 finalOutput={finalOutput}
                 baseFinalOutput={baseFinalOutput}
@@ -2813,15 +2812,8 @@ export default function App() {
                 youtubeAuth={youtubeAuth}
                 safety={safety}
                 launchReadiness={launchReadiness}
-                hasProductionMap={productionMap.length > 0}
-                readiness={renderReadiness}
-                canBuildPreview={previewBuildReady}
-                canRenderFinal={finalRenderReady}
                 busy={busy}
                 busyAction={busyAction}
-                onRebuildAudio={rebuildAudioMix}
-                onBuildPreview={runPipeline}
-                onRenderFinal={renderFinalEpisode}
                 onUploadFinishingLayers={uploadFinishingLayerFiles}
                 onSaveFinishingLayers={saveFinishingLayers}
                 onExportFinishedMaster={exportFinishedMaster}
@@ -3003,47 +2995,6 @@ function visibleThumbnailCandidates(outputs = []) {
   return (aiOutputs.length ? aiOutputs : outputs).slice(0, 3);
 }
 
-function AutomationRunbookPanel({ automation = {}, safety = {} }) {
-  const autoStages = automationControls.filter((stage) => automation[stage.key]);
-  const privateUploadActive = Boolean(automation.uploadYoutube);
-
-  return (
-    <details className="reviewDetails automationRunbookPanel">
-      <summary>
-        <span>Automation Runbook</span>
-        <Pill tone={autoStages.length ? "good" : "neutral"}>{autoStages.length} auto</Pill>
-      </summary>
-      <div className="automationRunbookBody">
-        <div className="automationRunbookGrid">
-          {automationControls.map(({ key, label, phase, icon: Icon }) => {
-            const enabled = Boolean(automation[key]);
-            return (
-              <article key={key} className={`automationRunbookItem ${enabled ? "auto" : "manual"}`}>
-                <Icon size={16} />
-                <div>
-                  <span>{phase}</span>
-                  <strong>{label}</strong>
-                </div>
-                <Pill tone={enabled ? "good" : "neutral"}>{enabled ? "auto" : "manual"}</Pill>
-              </article>
-            );
-          })}
-        </div>
-        <div className="manualPublishNotice">
-          {privateUploadActive
-            ? "YouTube automation can upload private drafts only. Public publishing still requires the manual handoff checklist."
-            : "YouTube upload is manual. Use YouTube Prep after final render and thumbnail selection."}
-        </div>
-        {safety.publishingEnabled ? (
-          <div className="manualPublishNotice warning">
-            Publishing mode is enabled. Current safety boundary: private YouTube draft uploads only.
-          </div>
-        ) : null}
-      </div>
-    </details>
-  );
-}
-
 function PreviewWorkflowPanel({
   previewOutput,
   finalOutput,
@@ -3141,8 +3092,7 @@ function PreviewWorkflowPanel({
 }
 
 function FinalReviewPanel({
-  mode = "preview",
-  audioOutput,
+  mode = "composite",
   previewOutput,
   finalOutput,
   baseFinalOutput,
@@ -3167,15 +3117,8 @@ function FinalReviewPanel({
   youtubeAuth,
   safety,
   launchReadiness,
-  hasProductionMap,
-  readiness,
-  canBuildPreview,
-  canRenderFinal,
   busy,
   busyAction,
-  onRebuildAudio,
-  onBuildPreview,
-  onRenderFinal,
   onUploadFinishingLayers,
   onSaveFinishingLayers,
   onExportFinishedMaster,
@@ -3215,10 +3158,8 @@ function FinalReviewPanel({
     thumbnailOutputs.length +
     reportOutputs.length;
   const reviewVideo = finalOutput || previewOutput;
-  const showPreviewTools = mode === "preview" || mode === "all";
   const showCompositeTools = mode === "composite" || mode === "all";
   const showDeliveryTools = mode === "delivery" || mode === "all";
-  const renderBusy = busyAction === "rebuild-audio" || busyAction === "build-preview" || busyAction === "render-final";
   const thumbnailBusy = busyAction === "thumbnails";
   const selectedThumbnailId = drafts.selectedThumbnailOutputId || thumbnailOutputs.find((thumb) => thumb.isSelected)?.id || "";
   const selectedThumbnail = thumbnailOutputs.find((thumb) => thumb.id === selectedThumbnailId) || null;
@@ -3255,83 +3196,6 @@ function FinalReviewPanel({
 
   return (
     <section className={`workPanel finalReviewPanel ${mode}Mode`}>
-      {showPreviewTools ? (
-      <>
-      <div className="panelHeader">
-        <div>
-          <span className="eyebrow">Render Control</span>
-          <div className="renderTitleRow">
-            <h3>Preview & Final Render</h3>
-            {renderBusy ? <RefreshCw className="spin renderRunningIcon" size={17} aria-label="Render running" /> : null}
-          </div>
-        </div>
-      </div>
-
-      <div className="renderCommandBar">
-        <Pill tone={finalOutput ? "good" : integrations.youtube ? "good" : "neutral"}>
-          {finalOutput ? "final ready" : integrations.youtube ? "YouTube linked" : "Local draft"}
-        </Pill>
-        <div className="buttonRow">
-          <button className="secondaryButton" onClick={onRebuildAudio} disabled={!hasProductionMap || busy}>
-            <RefreshCw size={16} />
-            Rebuild Audio
-          </button>
-          <button
-            className="secondaryButton"
-            onClick={onBuildPreview}
-            disabled={!canBuildPreview || busy}
-            title={canBuildPreview ? "Create or refresh the local preview" : readiness.setupReady ? "Select an episode first" : "Clear the storyboard readiness checks first"}
-          >
-            <Play size={17} />
-            Build Preview
-          </button>
-          <button
-            className="runButton"
-            onClick={onRenderFinal}
-            disabled={!canRenderFinal || busy}
-            title={canRenderFinal ? "Create final local render" : "Complete the Render Readiness review checks first"}
-          >
-            <Film size={17} />
-            Render Final
-          </button>
-        </div>
-      </div>
-
-      <div className={`finalReviewGrid ${reviewVideo ? "" : "audioOnly"}`}>
-        <div className="finalAudioCard">
-          <div className="audioReviewHeader">
-            <div>
-              <span className="eyebrow">Audio Preview</span>
-              <strong>{audioOutput?.name || "No mix yet"}</strong>
-            </div>
-          </div>
-          {audioOutput?.localUrl ? (
-            <audio controls preload="metadata" src={audioOutput.localUrl} />
-          ) : (
-            <div className="emptyState compact">No audio preview yet.</div>
-          )}
-        </div>
-
-        {reviewVideo && (
-          <div className="previewBlock">
-            <video
-              src={reviewVideo.localUrl}
-              controls
-              playsInline
-              style={{ aspectRatio: cssAspectRatio(selectedFormat.aspectRatio) }}
-            />
-            <div>
-              <strong>{finalOutput ? "Final local render" : "Local episode preview"}</strong>
-              <p>{reviewVideo.name}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <RenderReadinessPanel readiness={readiness} />
-      </>
-      ) : null}
-
       {showCompositeTools ? (
       <FinishingLayersPanel
         baseFinalOutput={baseFinalOutput}

@@ -3287,7 +3287,7 @@ async function createPipelineJob({ episode, show }) {
     episodeId: episode.id,
     showId: show.id,
     status: report.overall === "fail" ? "blocked" : preview?.video ? "local_preview_ready" : "local_test_passed",
-    currentStage: preview?.video ? "Preview Ready" : report.renderReady ? "Ready for Render Integration" : "Package Review",
+    currentStage: preview?.video ? "Preview Ready" : report.renderReady ? "Ready for Render Integration" : "Package Check",
     createdAt: new Date().toISOString(),
     summary:
       report.overall === "fail"
