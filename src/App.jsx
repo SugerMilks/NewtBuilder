@@ -3802,6 +3802,7 @@ function FinalReviewPanel({
     [drafts, selectedFormat.aspectRatio, showName, episodeTitle]
   );
   const [thumbnailBrief, setThumbnailBrief] = useState(thumbnailBriefDefaults);
+  const [thumbnailBriefExpanded, setThumbnailBriefExpanded] = useState(false);
 
   useEffect(() => {
     setThumbnailBrief(thumbnailBriefDefaults);
@@ -3957,37 +3958,55 @@ function FinalReviewPanel({
               </label>
             ))}
           </div>
-          <div className="thumbnailBriefGrid">
-            <Field label="Large show super">
-              <input
-                value={thumbnailBrief.superText}
-                onChange={(event) => updateThumbnailBrief("superText", event.target.value)}
-                placeholder={showName || "Show name"}
-              />
-            </Field>
-            <Field label="Smaller episode text">
-              <input
-                value={thumbnailBrief.episodeText || ""}
-                onChange={(event) => updateThumbnailBrief("episodeText", event.target.value)}
-                placeholder={episodeTitle || "Episode name"}
-              />
-            </Field>
-            <Field label="Image 2 prompt">
-              <textarea
-                value={thumbnailBrief.prompt}
-                onChange={(event) => updateThumbnailBrief("prompt", event.target.value)}
-                rows={3}
-              />
-            </Field>
-            <Field label="Provided information">
-              <textarea
-                value={thumbnailBrief.details}
-                onChange={(event) => updateThumbnailBrief("details", event.target.value)}
-                rows={3}
-                placeholder="Story hook, emotion, character moment, or thumbnail direction"
-              />
-            </Field>
+          <div className="thumbnailBriefSummary">
+            <div>
+              <span className="eyebrow">Auto Text</span>
+              <strong>{thumbnailBrief.superText || showName || "Show name"}</strong>
+              <p>{thumbnailBrief.episodeText || episodeTitle || "Episode name appears smaller when provided."}</p>
+            </div>
+            <button
+              className="quietButton"
+              type="button"
+              onClick={() => setThumbnailBriefExpanded((value) => !value)}
+              aria-expanded={thumbnailBriefExpanded}
+            >
+              <ChevronRight size={15} className={thumbnailBriefExpanded ? "open" : ""} />
+              Advanced brief
+            </button>
           </div>
+          {thumbnailBriefExpanded ? (
+            <div className="thumbnailBriefGrid">
+              <Field label="Large show super">
+                <input
+                  value={thumbnailBrief.superText}
+                  onChange={(event) => updateThumbnailBrief("superText", event.target.value)}
+                  placeholder={showName || "Show name"}
+                />
+              </Field>
+              <Field label="Smaller episode text">
+                <input
+                  value={thumbnailBrief.episodeText || ""}
+                  onChange={(event) => updateThumbnailBrief("episodeText", event.target.value)}
+                  placeholder={episodeTitle || "Episode name"}
+                />
+              </Field>
+              <Field label="Image 2 prompt">
+                <textarea
+                  value={thumbnailBrief.prompt}
+                  onChange={(event) => updateThumbnailBrief("prompt", event.target.value)}
+                  rows={3}
+                />
+              </Field>
+              <Field label="Provided information">
+                <textarea
+                  value={thumbnailBrief.details}
+                  onChange={(event) => updateThumbnailBrief("details", event.target.value)}
+                  rows={3}
+                  placeholder="Story hook, emotion, character moment, or thumbnail direction"
+                />
+              </Field>
+            </div>
+          ) : null}
           {thumbnailOutputs.length ? (
             <div className="thumbnailOutputGrid">
               {thumbnailOutputs.slice(0, 6).map((thumb) => (

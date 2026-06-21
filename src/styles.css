@@ -2455,6 +2455,46 @@ label:has(textarea:disabled) {
   margin-bottom: 3px;
 }
 
+.thumbnailBriefSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.thumbnailBriefSummary > div {
+  min-width: 0;
+}
+
+.thumbnailBriefSummary strong,
+.thumbnailBriefSummary p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbnailBriefSummary p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.thumbnailBriefSummary .quietButton {
+  white-space: nowrap;
+}
+
+.thumbnailBriefSummary .quietButton svg {
+  transition: transform 0.18s ease;
+}
+
+.thumbnailBriefSummary .quietButton svg.open {
+  transform: rotate(90deg);
+}
+
 .thumbnailBriefGrid {
   display: grid;
   grid-template-columns: minmax(220px, 0.8fr) minmax(300px, 1.2fr);
@@ -5039,6 +5079,11 @@ label:has(textarea:disabled) {
   .dashboardHeader,
   .episodeShelfHeader,
   .renderCommandBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .thumbnailBriefSummary {
     align-items: stretch;
     flex-direction: column;
   }
