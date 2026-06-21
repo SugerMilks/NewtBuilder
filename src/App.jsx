@@ -618,13 +618,6 @@ function VoiceSelectOptions({ voices, currentValue }) {
   );
 }
 
-function newestTimestamp(items = []) {
-  return items.reduce((latest, item) => {
-    const value = Date.parse(item?.updatedAt || item?.createdAt || "");
-    return Number.isFinite(value) ? Math.max(latest, value) : latest;
-  }, 0);
-}
-
 function friendlyDate(value) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "Not saved yet";
@@ -722,10 +715,6 @@ function ShowDashboard({
   onOpenEpisodeReview,
   onRenameEpisode
 }) {
-  const latestTime = newestTimestamp(episodes);
-  const renderedCount = episodes.filter((episode) => episodeOutputsOfType(episode, "final_video").length).length;
-  const uploadedCount = episodes.filter((episode) => episodeOutputsOfType(episode, "youtube_upload").some((output) => output.videoId)).length;
-
   if (!show) {
     return (
       <section className="showDashboardView">
@@ -736,76 +725,57 @@ function ShowDashboard({
 
   return (
     <section className="showDashboardView">
-      <div className="dashboardHeader">
+      <div className="episodeShelfHeader">
         <div>
           <span className="eyebrow">Show</span>
           <h2>{show.name}</h2>
           <p>{show.description || "No description yet."}</p>
         </div>
+        <span>{episodes.length ? `${episodes.length} saved episode${episodes.length === 1 ? "" : "s"}` : "Fresh show"}</span>
       </div>
 
-      <div className="dashboardMetricGrid">
-        <Metric icon={Clapperboard} label="Episodes" value={episodes.length} />
-        <Metric icon={Film} label="Rendered" value={renderedCount} />
-        <Metric icon={Youtube} label="Uploaded" value={uploadedCount} />
-        <Metric icon={Gauge} label="Format" value={show.shortFormat?.resolution || show.shortFormat?.aspectRatio || "Not set"} />
-      </div>
-
-      <div className="episodeShelfHeader">
-        <div>
-          <span className="eyebrow">Episodes</span>
-          <h3>{episodes.length ? "Saved Episodes" : "No episodes yet"}</h3>
-        </div>
-        <span>{latestTime ? `Last edited ${friendlyDate(latestTime)}` : "Fresh show"}</span>
-      </div>
-
-      {episodes.length ? (
-        <div className="episodeCardGrid">
-          {episodes.map((episode) => {
-            const status = episodeStatusSummary(episode);
-            const previewImage = episodePreviewImage(episode);
-            return (
-              <article className="episodeCard" key={episode.id}>
-                <button className="episodeCardPreview" type="button" onClick={() => onOpenEpisode(episode.id)} disabled={busy}>
-                  {previewImage ? <img src={previewImage} alt="" /> : <Film size={30} />}
-                </button>
-                <div className="episodeCardBody">
-                  <div className="showCardTitleRow">
-                    <div>
-                      <h3>{episode.title}</h3>
-                      <span>Updated {friendlyDate(episode.updatedAt || episode.createdAt)}</span>
-                    </div>
-                    <Pill tone={status.tone}>{status.label}</Pill>
+      <div className="episodeCardGrid">
+        <button className="episodeCreateTile" type="button" onClick={onCreateEpisode} disabled={busy} aria-label="Create new episode">
+          <Plus size={32} />
+          <span>New Episode</span>
+        </button>
+        {episodes.map((episode) => {
+          const status = episodeStatusSummary(episode);
+          const previewImage = episodePreviewImage(episode);
+          return (
+            <article className="episodeCard" key={episode.id}>
+              <button className="episodeCardPreview" type="button" onClick={() => onOpenEpisode(episode.id)} disabled={busy}>
+                {previewImage ? <img src={previewImage} alt="" /> : <Film size={30} />}
+              </button>
+              <div className="episodeCardBody">
+                <div className="showCardTitleRow">
+                  <div>
+                    <h3>{episode.title}</h3>
+                    <span>Updated {friendlyDate(episode.updatedAt || episode.createdAt)}</span>
                   </div>
-                  <div className="episodeCardStats">
-                    <span>{episode.plan?.wordCount || 0} words</span>
-                    <span>{formatSeconds(episode.plan?.estimatedSeconds || 0)}</span>
-                    <span>{(episode.productionMap || []).length} shots</span>
-                  </div>
-                  <div className="buttonRow">
-                    <button className="primaryButton" type="button" onClick={() => onOpenEpisode(episode.id)} disabled={busy}>
-                      Open Studio
-                    </button>
-                    <button className="secondaryButton" type="button" onClick={() => onOpenEpisodeReview(episode.id)} disabled={busy}>
-                      Open Review
-                    </button>
-                    <button className="iconButton" type="button" onClick={() => onRenameEpisode(episode)} disabled={busy} title="Rename episode">
-                      <Pencil size={16} />
-                    </button>
-                  </div>
+                  <Pill tone={status.tone}>{status.label}</Pill>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="emptyState">
-          <button className="primaryButton" type="button" onClick={onCreateEpisode} disabled={busy}>
-            <Plus size={18} />
-            New Episode
-          </button>
-        </div>
-      )}
+                <div className="episodeCardStats">
+                  <span>{episode.plan?.wordCount || 0} words</span>
+                  <span>{formatSeconds(episode.plan?.estimatedSeconds || 0)}</span>
+                  <span>{(episode.productionMap || []).length} shots</span>
+                </div>
+                <div className="buttonRow">
+                  <button className="primaryButton" type="button" onClick={() => onOpenEpisode(episode.id)} disabled={busy}>
+                    Open Studio
+                  </button>
+                  <button className="secondaryButton" type="button" onClick={() => onOpenEpisodeReview(episode.id)} disabled={busy}>
+                    Open Review
+                  </button>
+                  <button className="iconButton" type="button" onClick={() => onRenameEpisode(episode)} disabled={busy} title="Rename episode">
+                    <Pencil size={16} />
+                  </button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -2537,10 +2507,12 @@ export default function App() {
                   Rename Episode
                 </button>
               ) : null}
-              <button className="primaryButton" onClick={createEpisode} disabled={!activeShow || busy}>
-                <Plus size={18} />
-                New Episode
-              </button>
+              {workspaceView ? (
+                <button className="primaryButton" onClick={createEpisode} disabled={!activeShow || busy}>
+                  <Plus size={18} />
+                  New Episode
+                </button>
+              ) : null}
             </>
           ) : null}
         </div>
