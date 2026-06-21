@@ -91,7 +91,6 @@ body::before {
 .showCreateTile,
 .episodeCard,
 .reviewDetails,
-.approvalGate,
 .connectionStatus,
 .automationStageCard {
   border-color: rgba(255, 255, 255, 0.13);
@@ -321,8 +320,7 @@ main {
 }
 
 .workPanel,
-.reviewDetails,
-.approvalGate {
+.reviewDetails {
   border-radius: 24px;
 }
 
@@ -1350,8 +1348,7 @@ input[type="file"] {
 .topActions,
 .buttonRow,
 .metrics,
-.statusText,
-.gateActions {
+.statusText {
   display: flex;
   align-items: center;
 }
@@ -1407,7 +1404,6 @@ h4 {
 .eyebrow,
 .field span,
 .metric span,
-.approvalGate span,
 .jobLog span {
   color: var(--muted);
 }
@@ -2242,56 +2238,6 @@ label:has(textarea:disabled) {
   font-size: 15px;
 }
 
-.approvalStack {
-  display: grid;
-  gap: 10px;
-}
-
-.approvalStack.topGates {
-  margin-bottom: 14px;
-}
-
-.approvalStack.compact {
-  margin-top: 18px;
-}
-
-.approvalGate {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel-2);
-}
-
-.approvalGate.compact {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  padding: 11px;
-}
-
-.gateIcon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--jade);
-  background: #1c241e;
-}
-
-.approvalGate strong,
-.approvalGate span {
-  display: block;
-}
-
-.approvalGate span {
-  font-size: 12px;
-  margin-top: 3px;
-}
-
 .pill {
   display: inline-flex;
   align-items: center;
@@ -2676,6 +2622,54 @@ label:has(textarea:disabled) {
   color: #d8ffed;
   border-color: rgba(109, 208, 165, 0.30);
   background: rgba(109, 208, 165, 0.12);
+}
+
+.previewApprovalStrip {
+  display: grid;
+  gap: 8px;
+}
+
+.previewApprovalChip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.previewApprovalChip.approved {
+  border-color: rgba(109, 208, 165, 0.30);
+  background: rgba(109, 208, 165, 0.10);
+}
+
+.previewApprovalChip.blocked {
+  border-color: rgba(255, 107, 125, 0.34);
+  background: rgba(255, 107, 125, 0.08);
+}
+
+.previewApprovalChip > div:first-child {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.previewApprovalChip strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewApprovalActions {
+  display: flex;
+  gap: 5px;
 }
 
 .previewCommandActions {
@@ -5056,8 +5050,6 @@ label:has(textarea:disabled) {
     justify-content: space-between;
   }
 
-  .approvalGate,
-  .approvalGate.compact,
   .characterRow,
   .productionLine,
   .insertProductionLine,
@@ -5067,10 +5059,6 @@ label:has(textarea:disabled) {
 
   .insertShotControls {
     grid-column: auto;
-  }
-
-  .gateActions {
-    flex-wrap: wrap;
   }
 
   .maskEditorToolbar {
@@ -5117,7 +5105,6 @@ body {
 .showCreateTile,
 .episodeCard,
 .reviewDetails,
-.approvalGate,
 .connectionStatus,
 .automationStageCard {
   border-color: rgba(255, 255, 255, 0.13);
@@ -5217,8 +5204,7 @@ body {
 }
 
 .workPanel,
-.reviewDetails,
-.approvalGate {
+.reviewDetails {
   border-radius: 24px;
 }
 

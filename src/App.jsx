@@ -3203,24 +3203,19 @@ export default function App() {
               </div>
             </div>
             {activeWorkflowSection.key === "preview" ? (
-            <div className="approvalStack topGates">
-              {approvals.map((gate) => (
-                <ApprovalGate key={gate.id} gate={gate} onApprove={setApproval} />
-              ))}
-            </div>
-            ) : null}
-            {activeWorkflowSection.key === "preview" ? (
               <PreviewWorkflowPanel
                 audioOutput={audioOutput}
                 previewOutput={previewOutput}
                 finalOutput={baseFinalOutput}
                 selectedFormat={selectedFormat}
                 readiness={renderReadiness}
+                approvals={approvals}
                 hasProductionMap={productionMap.length > 0}
                 canBuildPreview={previewBuildReady}
                 canRenderFinal={finalRenderReady}
                 busy={busy}
                 busyAction={busyAction}
+                onSetApproval={setApproval}
                 onRebuildAudio={rebuildAudioMix}
                 onBuildPreview={runPipeline}
                 onRenderFinal={renderFinalEpisode}
@@ -3479,11 +3474,13 @@ function PreviewWorkflowPanel({
   finalOutput,
   selectedFormat,
   readiness,
+  approvals = [],
   hasProductionMap,
   canBuildPreview,
   canRenderFinal,
   busy,
   busyAction,
+  onSetApproval,
   onRebuildAudio,
   onBuildPreview,
   onRenderFinal
@@ -3499,6 +3496,9 @@ function PreviewWorkflowPanel({
     { label: "Preview", done: Boolean(previewOutput?.localUrl) },
     { label: "Final", done: Boolean(finalOutput?.localUrl) }
   ];
+  const previewGates = ["script_plan", "voice_audio", "render_preview"]
+    .map((id) => approvals.find((gate) => gate.id === id))
+    .filter(Boolean);
 
   return (
     <section className="previewWorkflowCanvas">
@@ -3520,6 +3520,43 @@ function PreviewWorkflowPanel({
             </span>
           ))}
         </div>
+        {previewGates.length ? (
+          <div className="previewApprovalStrip">
+            {previewGates.map((gate) => {
+              const approved = gate.status === "approved" || gate.status === "auto";
+              return (
+                <article key={gate.id} className={`previewApprovalChip ${approved ? "approved" : gate.status === "blocked" ? "blocked" : ""}`}>
+                  <div>
+                    <strong>{gate.title}</strong>
+                    <Pill tone={statusTone(gate.status)}>{gate.status}</Pill>
+                  </div>
+                  <div className="previewApprovalActions">
+                    <button
+                      type="button"
+                      className="quietButton iconOnly"
+                      onClick={() => onSetApproval?.(gate.id, "approved")}
+                      disabled={busy || approved}
+                      title={approved ? `${gate.title} approved` : gate.actionLabel}
+                      aria-label={approved ? `${gate.title} approved` : gate.actionLabel}
+                    >
+                      <Check size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      className="quietButton iconOnly"
+                      onClick={() => onSetApproval?.(gate.id, "blocked")}
+                      disabled={busy}
+                      title={`Hold ${gate.title}`}
+                      aria-label={`Hold ${gate.title}`}
+                    >
+                      <CircleAlert size={15} />
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : null}
         <div className="previewCommandActions">
           <button
             className="primaryButton"
@@ -5933,33 +5970,6 @@ function LaunchReadinessPanel({ readiness, busy, busyAction, onCheck }) {
         </details>
       ) : null}
     </div>
-  );
-}
-
-function ApprovalGate({ gate, onApprove, compact = false }) {
-  const tone = statusTone(gate.status);
-  return (
-    <article className={`approvalGate ${compact ? "compact" : ""}`}>
-      <div className="gateIcon">
-        {gate.status === "approved" || gate.status === "auto" ? <Check size={18} /> : <ListChecks size={18} />}
-      </div>
-      <div>
-        <strong>{gate.title}</strong>
-        <span>{gate.stage}</span>
-      </div>
-      <Pill tone={tone}>{gate.status}</Pill>
-      {!compact && (
-        <div className="gateActions">
-          <button className="secondaryButton" onClick={() => onApprove(gate.id, "approved")}>
-            <Check size={16} />
-            {gate.actionLabel}
-          </button>
-          <button className="quietButton" onClick={() => onApprove(gate.id, "blocked")}>
-            Hold
-          </button>
-        </div>
-      )}
-    </article>
   );
 }
 
