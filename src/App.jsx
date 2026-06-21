@@ -1104,8 +1104,7 @@ export default function App() {
   async function openShow(showId) {
     if (!showId) return;
     setActiveShowId(showId);
-    setAppView("episode");
-    setActiveTab("setup");
+    setAppView("show");
     await reloadEpisodes(showId);
   }
 
