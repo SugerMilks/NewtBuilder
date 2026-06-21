@@ -1944,25 +1944,36 @@ export default function App() {
       const lines = [...(prev.productionMap || [])];
       const insertIndex = afterLineId ? lines.findIndex((line) => line.id === afterLineId) + 1 : lines.length;
       const safeIndex = insertIndex > 0 ? insertIndex : lines.length;
-      const newLine = {
+      const baseLine = {
         id: newLineId,
         index: safeIndex + 1,
         lineType: isInsert ? "insert" : "dialogue",
         speaker: isInsert ? "INSERT" : "",
         text: "",
-        characterId: "",
-        voiceId: "",
         shotRole: isInsert ? "insert_shot" : kind,
         assetId: "",
-        maskAssetId: "",
-        needsMask: false,
-        invertMask: false,
-        audioTags: "",
-        audioStatus: isInsert ? undefined : "pending",
-        videoStatus: isInsert ? "pending" : undefined,
-        videoPrompt: "",
-        lipSyncModel: activeShow?.production?.defaultLipSyncModel || "fabric"
+        videoPrompt: ""
       };
+      const newLine = isInsert
+        ? {
+            ...baseLine,
+            videoStatus: "pending",
+            insertVideoMode: "reference",
+            videoInSeconds: 0,
+            videoOutSeconds: 0
+          }
+        : {
+            ...baseLine,
+            characterId: "",
+            voiceId: "",
+            maskAssetId: "",
+            needsMask: false,
+            invertMask: false,
+            audioTags: "",
+            expressiveBodyMotion: false,
+            audioStatus: "pending",
+            lipSyncModel: activeShow?.production?.defaultLipSyncModel || "fabric"
+          };
       const next = structuredClone(prev);
       lines.splice(safeIndex, 0, newLine);
       next.productionMap = applyStoredSpeakerMasksToLines(reindexProductionMap(lines), next.assets || []);
