@@ -2392,17 +2392,49 @@ label:has(textarea:disabled) {
   margin-top: 4px;
 }
 
+.deliveryThumbnailNode {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(216, 198, 255, 0.15), transparent 32%),
+    radial-gradient(circle at 82% 74%, rgba(109, 208, 165, 0.10), transparent 34%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 24px 70px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(20px) saturate(132%);
+}
+
+.deliveryNodeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.deliveryNodeHeader h3 {
+  margin-top: 2px;
+}
+
 .thumbnailReviewBody {
   display: grid;
   gap: 12px;
-  margin-inline: 12px;
 }
 
 .thumbnailReviewHeader {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.14);
 }
 
 .thumbnailReviewHeader .eyebrow {

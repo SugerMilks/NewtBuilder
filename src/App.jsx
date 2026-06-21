@@ -3249,6 +3249,8 @@ export default function App() {
                 packageOutputs={packageOutputs}
                 thumbnailOutputs={thumbnailOutputs}
                 drafts={drafts}
+                showName={activeShow?.name || showDraft?.name || ""}
+                episodeTitle={activeEpisode?.title || episodeDraft?.title || ""}
                 selectedFormat={selectedFormat}
                 socialConfig={campaignConfig}
                 integrations={integrations}
@@ -3399,19 +3401,26 @@ function ReadinessItem({ check }) {
   );
 }
 
-function defaultThumbnailBrief({ drafts = {}, selectedFormat = {} }) {
+function defaultThumbnailBrief({ drafts = {}, selectedFormat = {}, showName = "", episodeTitle = "" }) {
   const selectedAspect = thumbnailFormatOptions.some((option) => option.aspectRatio === selectedFormat.aspectRatio)
     ? selectedFormat.aspectRatio
     : "16:9";
   const aspect = selectedAspect.replace(":", "x");
-  const superText = drafts.youtube?.title || "New Episode";
-  const details = [drafts.youtube?.description, (drafts.youtube?.tags || []).join(" ")]
+  const cleanShowName = String(showName || "").trim() || "New Episode";
+  const cleanEpisodeTitle = String(episodeTitle || drafts.youtube?.title || "").trim();
+  const superText = cleanShowName;
+  const details = [
+    `Show name for large super: ${cleanShowName}`,
+    cleanEpisodeTitle ? `Smaller episode display: ${cleanEpisodeTitle}` : "",
+    drafts.youtube?.description,
+    (drafts.youtube?.tags || []).join(" ")
+  ]
     .filter(Boolean)
     .join("\n\n")
     .trim();
   return {
     superText,
-    prompt: `Create a ${aspect} YouTube thumbnail that includes the selected still frame, a dynamic super, and the provided episode information.`,
+    prompt: `Create a ${aspect} thumbnail using the selected still frame. Make the show name the large dynamic super and include the episode name smaller as supporting text when provided.`,
     details,
     formats: [selectedAspect]
   };
@@ -3628,6 +3637,8 @@ function FinalReviewPanel({
   youtubeUploadOutputs = [],
   thumbnailOutputs,
   drafts,
+  showName = "",
+  episodeTitle = "",
   selectedFormat,
   socialConfig,
   integrations,
@@ -3693,8 +3704,8 @@ function FinalReviewPanel({
   const latestYoutubeUpload = youtubeUploadOutputs[0] || null;
   const packageReady = Boolean(finalOutput && selectedThumbnail);
   const thumbnailBriefDefaults = useMemo(
-    () => defaultThumbnailBrief({ drafts, selectedFormat }),
-    [drafts, selectedFormat.aspectRatio]
+    () => defaultThumbnailBrief({ drafts, selectedFormat, showName, episodeTitle }),
+    [drafts, selectedFormat.aspectRatio, showName, episodeTitle]
   );
   const [thumbnailBrief, setThumbnailBrief] = useState(thumbnailBriefDefaults);
 
@@ -3815,20 +3826,27 @@ function FinalReviewPanel({
 
       {showDeliveryTools ? (
       <>
-      <details className="reviewDetails thumbnailReviewPanel">
-        <summary>
-          <span className="summaryTitleWithIcon">
-            Thumbnail
-            {thumbnailBusy ? <RefreshCw className="spin renderRunningIcon" size={16} aria-label="Thumbnail generation running" /> : null}
-          </span>
+      <article className="deliveryThumbnailNode">
+        <div className="deliveryNodeHeader">
+          <div>
+            <span className="eyebrow">Delivery Node</span>
+            <h3 className="summaryTitleWithIcon">
+              Thumbnail
+              {thumbnailBusy ? <RefreshCw className="spin renderRunningIcon" size={16} aria-label="Thumbnail generation running" /> : null}
+            </h3>
+          </div>
           <Pill tone={selectedThumbnailId ? "good" : thumbnailOutputs.length ? "neutral" : "warn"}>
             {selectedThumbnailId ? "selected" : thumbnailOutputs.length ? "ready" : "needed"}
           </Pill>
-        </summary>
+        </div>
         <div className="thumbnailReviewBody">
           <div className="thumbnailReviewHeader">
+            <div>
+              <span className="eyebrow">Image 2</span>
+              <strong>{normalizeThumbnailFormats(thumbnailBrief.formats, selectedFormat.aspectRatio).length} format output</strong>
+            </div>
             <button className="secondaryButton" onClick={() => onGenerateThumbnails(thumbnailBrief)} disabled={!reviewVideo || busy}>
-              <Image size={16} />
+              {thumbnailBusy ? <RefreshCw className="spin" size={16} /> : <Image size={16} />}
               Generate AI Thumbnails
             </button>
           </div>
@@ -3846,11 +3864,11 @@ function FinalReviewPanel({
             ))}
           </div>
           <div className="thumbnailBriefGrid">
-            <Field label="Dynamic super">
+            <Field label="Large show super">
               <input
                 value={thumbnailBrief.superText}
                 onChange={(event) => updateThumbnailBrief("superText", event.target.value)}
-                placeholder="Big readable thumbnail text"
+                placeholder={showName || "Show name"}
               />
             </Field>
             <Field label="Image 2 prompt">
@@ -3889,7 +3907,7 @@ function FinalReviewPanel({
             <div className="emptyState compact">Build a preview or final render, then generate AI thumbnail candidates.</div>
           )}
         </div>
-      </details>
+      </article>
 
       <FinalPackagePanel
         finalOutput={finalOutput}

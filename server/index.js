@@ -5602,7 +5602,7 @@ function thumbnailMimeTypeForPath(filePath) {
 }
 
 function thumbnailTitleText({ episode, show, thumbnailBrief = {} }) {
-  const rawTitle = thumbnailBrief.superText || episode.drafts?.youtube?.title || episode.title || show.name || "New Episode";
+  const rawTitle = thumbnailBrief.superText || show.name || episode.drafts?.youtube?.title || episode.title || "New Episode";
   return wrapThumbnailText(rawTitle, 18, 3).toUpperCase();
 }
 
@@ -5827,6 +5827,7 @@ function aiThumbnailPrompt({ episode, show, variant, title, format, thumbnailBri
   const thumbnailStyle = show.creative?.thumbnailStyle || "bold character moment, clean text, strong expression";
   const aspect = format?.promptAspect || "wide 16:9 YouTube thumbnail";
   const titleLine = title.replace(/\n/g, " ");
+  const episodeLine = compactText(episode.title || episode.drafts?.youtube?.title || "", 120);
   const userInstruction =
     thumbnailBrief.prompt ||
     `Create a ${aspect} that includes the selected still frame, a dynamic super, and the provided episode information.`;
@@ -5837,6 +5838,9 @@ function aiThumbnailPrompt({ episode, show, variant, title, format, thumbnailBri
       `Create a premium ${aspect} for the show "${show.name}".`,
       "Use Image 1 as the selected still frame and compositional base. Use the other provided images only as visual references for character identity and show style.",
       `Dynamic super text to include exactly, large and readable: "${titleLine}".`,
+      episodeLine && episodeLine.toUpperCase() !== titleLine.toUpperCase()
+        ? `Add the episode name as smaller supporting text, clearly secondary to the show title: "${episodeLine}".`
+        : "",
       providedInfo ? `Provided episode information: ${compactText(providedInfo, 700)}.` : "",
       `Preserve the exact character designs, color palette, and episode visual style from the references.`,
       `Visual style: ${visualStyle}. Thumbnail style: ${thumbnailStyle}.`,
