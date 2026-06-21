@@ -400,14 +400,14 @@ function buildRenderReadiness({
     )
   ];
 
-  const reviewChecks = [
+  const outputChecks = [
     readinessCheck(
       "audio_mix",
       "Audio mix",
       Boolean(audioOutput?.localUrl),
       audioOutput?.localUrl ? "Audio preview is available" : "Rebuild audio or build a preview",
       "warning",
-      "review"
+      "output"
     ),
     readinessCheck(
       "preview_video",
@@ -415,14 +415,14 @@ function buildRenderReadiness({
       Boolean(previewOutput?.localUrl),
       previewOutput?.localUrl ? "Local preview is available" : "Build Preview before final render",
       "warning",
-      "review"
+      "output"
     ),
   ];
 
   const setupReady = setupChecks.every((check) => check.status !== "fail");
-  const finalReady = setupReady && reviewChecks.every((check) => check.status === "pass");
+  const finalReady = setupReady && outputChecks.every((check) => check.status === "pass");
   return {
-    checks: [...setupChecks, ...reviewChecks],
+    checks: [...setupChecks, ...outputChecks],
     setupReady,
     finalReady,
     tone: finalReady ? "good" : setupReady ? "warn" : "danger",
@@ -2887,7 +2887,7 @@ function Metric({ icon: Icon, label, value }) {
 
 function RenderReadinessPanel({ readiness }) {
   const setupChecks = readiness.checks.filter((check) => check.group === "setup");
-  const reviewChecks = readiness.checks.filter((check) => check.group === "review");
+  const outputChecks = readiness.checks.filter((check) => check.group === "output");
 
   return (
     <details className="reviewDetails readinessPanel">
@@ -2906,9 +2906,9 @@ function RenderReadinessPanel({ readiness }) {
           </div>
         </div>
         <div>
-          <h4>Review</h4>
+          <h4>Output</h4>
           <div className="readinessGrid">
-            {reviewChecks.map((check) => (
+            {outputChecks.map((check) => (
               <ReadinessItem key={check.id} check={check} />
             ))}
           </div>
