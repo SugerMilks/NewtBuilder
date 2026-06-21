@@ -3125,14 +3125,15 @@ function defaultThumbnailBrief({ drafts = {}, selectedFormat = {}, showName = ""
   const selectedAspect = thumbnailFormatOptions.some((option) => option.aspectRatio === selectedFormat.aspectRatio)
     ? selectedFormat.aspectRatio
     : "16:9";
-  const aspect = selectedAspect.replace(":", "x");
   const cleanShowName = String(showName || "").trim() || "New Episode";
   const cleanEpisodeTitle = String(episodeTitle || drafts.youtube?.title || "").trim();
+  const defaultFormats = thumbnailFormatOptions.map((option) => option.aspectRatio);
   const superText = cleanShowName;
   const episodeText = cleanEpisodeTitle;
   const details = [
     `Show name for large super: ${cleanShowName}`,
     episodeText ? `Smaller episode display: ${episodeText}` : "",
+    `Primary episode aspect: ${selectedAspect}`,
     drafts.youtube?.description,
     (drafts.youtube?.tags || []).join(" ")
   ]
@@ -3142,9 +3143,9 @@ function defaultThumbnailBrief({ drafts = {}, selectedFormat = {}, showName = ""
   return {
     superText,
     episodeText,
-    prompt: `Create a ${aspect} thumbnail using the selected still frame. Make the show name the large dynamic super and include the episode name smaller as supporting text when provided.`,
+    prompt: "Create thumbnail assets for the selected delivery format(s) using the selected still frame. Make the show name the large dynamic super and include the episode name smaller as supporting text when provided.",
     details,
-    formats: [selectedAspect]
+    formats: defaultFormats
   };
 }
 
