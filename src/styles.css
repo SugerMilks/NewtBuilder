@@ -476,6 +476,377 @@ main {
   }
 }
 
+/* Node-based Assets canvas */
+.assetNodeCanvas {
+  position: relative;
+  min-height: 640px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 28px;
+  padding: 26px min(32px, 4vw);
+  background:
+    radial-gradient(circle at 18% 24%, rgba(216, 198, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 82% 72%, rgba(232, 183, 119, 0.13), transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    rgba(0, 0, 0, 0.23);
+  background-size: auto, auto, 54px 54px, 54px 54px, auto;
+}
+
+.assetNodeBoard {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(420px, 1.2fr);
+  gap: 22px;
+  padding-right: clamp(120px, 14vw, 210px);
+}
+
+.assetNode {
+  position: relative;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  padding: 18px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 24px 70px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(20px) saturate(132%);
+}
+
+.nodeHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.nodeHeader strong {
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.nodePort {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: #f7f2e7;
+  box-shadow:
+    0 0 0 6px rgba(255, 255, 255, 0.08),
+    0 0 26px rgba(216, 198, 255, 0.36);
+}
+
+.nodePort.output {
+  right: -7px;
+  top: 42px;
+}
+
+.nodePort.input {
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.assetInputNode {
+  position: absolute;
+  z-index: 3;
+  right: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 112px;
+  padding: 18px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  color: #050505;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.90);
+  box-shadow:
+    0 0 0 8px rgba(255, 255, 255, 0.08),
+    0 22px 52px rgba(0, 0, 0, 0.32);
+}
+
+.assetNodeConnectors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.assetNodeConnectors span {
+  position: absolute;
+  right: 124px;
+  width: clamp(220px, 28vw, 460px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.30), rgba(216, 198, 255, 0.42));
+  transform-origin: right center;
+}
+
+.assetNodeConnectors span:nth-child(1) {
+  top: 132px;
+  transform: rotate(7deg);
+}
+
+.assetNodeConnectors span:nth-child(2) {
+  top: 52%;
+}
+
+.assetNodeConnectors span:nth-child(3) {
+  bottom: 124px;
+  transform: rotate(-8deg);
+}
+
+.assetContextMenu {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  min-width: 190px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(20, 20, 22, 0.86);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(20px) saturate(130%);
+}
+
+.assetContextMenu button {
+  border: 0;
+  padding: 12px 14px;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.assetContextMenu button:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.visualFrameNode .castVisualLibrary {
+  margin-top: 0;
+}
+
+.visualFrameNode .shotUploadGrid {
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+/* Storyboard canvas */
+.productionStoryboardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.storyboardFrameCard {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.34);
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.storyboardFrameCard:hover,
+.storyboardFrameCard.selected {
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 0 0 3px rgba(216, 198, 255, 0.09);
+}
+
+.storyboardFrameCard.dragging {
+  opacity: 0.45;
+}
+
+.storyboardFrameCard.drop-before::before,
+.storyboardFrameCard.drop-after::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #f7f2e7;
+  box-shadow: 0 0 18px rgba(216, 198, 255, 0.6);
+}
+
+.storyboardFrameCard.drop-before::before {
+  top: 0;
+}
+
+.storyboardFrameCard.drop-after::after {
+  bottom: 0;
+}
+
+.storyboardFrameMedia {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(216, 198, 255, 0.16), transparent 38%),
+    rgba(255, 255, 255, 0.035);
+}
+
+.storyboardFrameMedia img,
+.storyboardFrameMedia video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.storyboardFrameEmpty {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.storyboardFrameNumber {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #050505;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.storyboardAddButton {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.52);
+  cursor: pointer;
+}
+
+.storyboardAddMenu {
+  position: absolute;
+  z-index: 8;
+  right: 7px;
+  top: 42px;
+  display: grid;
+  min-width: 150px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(13, 13, 15, 0.90);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.storyboardAddMenu button {
+  border: 0;
+  padding: 10px 12px;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.storyboardAddMenu button:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.storyboardGroupStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.storyboardGroupChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.storyboardGroupChip .open,
+.collapseTitle .open {
+  transform: rotate(90deg);
+}
+
+.storyboardEditorBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 4vw, 48px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.storyboardEditorPanel {
+  width: min(1120px, 100%);
+  max-height: min(92vh, 980px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 30px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 28% 8%, rgba(216, 198, 255, 0.18), transparent 32%),
+    rgba(10, 10, 11, 0.92);
+  box-shadow: 0 36px 100px rgba(0, 0, 0, 0.52);
+}
+
+.storyboardEditorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.storyboardEditorPanel .productionLine {
+  min-height: auto;
+  border-radius: 22px;
+  cursor: default;
+}
+
+@media (max-width: 1180px) {
+  .assetNodeBoard {
+    grid-template-columns: 1fr;
+    padding-right: 0;
+  }
+
+  .assetInputNode,
+  .assetNodeConnectors {
+    display: none;
+  }
+
+  .productionStoryboardGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .visualFrameNode .shotUploadGrid,
+  .productionStoryboardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 620px) {
   .libraryHeader h2 {
     font-size: 54px;

@@ -1957,6 +1957,41 @@ export default function App() {
     setStatus("Production row removed. Script source text was not changed.");
   }
 
+  function addProductionLine(afterLineId, kind = "character_one_shot") {
+    setEpisodeDraft((prev) => {
+      if (!prev) return prev;
+      const lines = [...(prev.productionMap || [])];
+      const insertIndex = afterLineId ? lines.findIndex((line) => line.id === afterLineId) + 1 : lines.length;
+      const safeIndex = insertIndex > 0 ? insertIndex : lines.length;
+      const isInsert = kind === "insert_shot";
+      const newLine = {
+        id: createLocalId(isInsert ? "insert-line" : "storyboard-line"),
+        index: safeIndex + 1,
+        lineType: isInsert ? "insert" : "dialogue",
+        speaker: isInsert ? "INSERT" : "Speaker",
+        text: isInsert ? "" : "New dialogue line",
+        characterId: "",
+        voiceId: "",
+        shotRole: isInsert ? "insert_shot" : kind,
+        assetId: "",
+        maskAssetId: "",
+        needsMask: false,
+        invertMask: false,
+        audioTags: "",
+        audioStatus: isInsert ? undefined : "pending",
+        videoStatus: isInsert ? "pending" : undefined,
+        videoPrompt: "",
+        lipSyncModel: activeShow?.production?.defaultLipSyncModel || "fabric"
+      };
+      const next = structuredClone(prev);
+      lines.splice(safeIndex, 0, newLine);
+      next.productionMap = applyStoredSpeakerMasksToLines(reindexProductionMap(lines), next.assets || []);
+      next.productionMapEditedAt = new Date().toISOString();
+      return next;
+    });
+    setStatus("Storyboard shot added. Script source text was not changed.");
+  }
+
   function reorderProductionLine(sourceLineId, targetLineId, placement = "before") {
     if (!sourceLineId || !targetLineId || sourceLineId === targetLineId) return;
     setEpisodeDraft((prev) => {
@@ -2135,7 +2170,7 @@ export default function App() {
         {
           id,
           name: "New Character",
-          role: "",
+          role: "main",
           voiceId: "",
           visualNotes: ""
         }
@@ -2502,57 +2537,79 @@ export default function App() {
                   </div>
                 }
               >
-                <p className="helperText">{voicesStatus}</p>
-                <div className="characterList">
-                  {(showDraft.characters || []).map((character, index) => (
-                    <article className="characterRow" key={character.id || index}>
-                      <label className="field compactCharacterField">
-                        <span>Name</span>
-                        <input
-                          value={character.name}
-                          onChange={(event) => updateCharacter(index, { name: event.target.value })}
-                        />
-                      </label>
-                      <label className="field compactCharacterField">
-                        <span>Role</span>
-                        <input
-                          value={character.role}
-                          onChange={(event) => updateCharacter(index, { role: event.target.value })}
-                          placeholder="Main, guest..."
-                        />
-                      </label>
-                      <label className="field compactCharacterField characterVoiceField">
-                        <span>Voice</span>
-                        <select
-                          value={character.voiceId || ""}
-                          onChange={(event) => updateCharacter(index, { voiceId: event.target.value })}
-                        >
-                          <VoiceSelectOptions voices={voices} currentValue={character.voiceId} />
-                        </select>
-                      </label>
-                      <label className="field compactCharacterField characterNotesField">
-                        <span>Visual notes</span>
-                        <textarea
-                          value={character.visualNotes}
-                          onChange={(event) => updateCharacter(index, { visualNotes: event.target.value })}
-                          rows={1}
-                          placeholder="What this character should look like, which uploads belong to them..."
-                        />
-                      </label>
-                      <button className="quietButton iconOnly characterRemoveButton" onClick={() => removeCharacter(index)} title="Remove character">
-                        <Trash2 size={15} />
-                      </button>
-                    </article>
-                  ))}
-                </div>
-                <CastVisualLibrary
-                  uploadShotTypes={uploadShotTypes}
-                  assetCounts={assetCounts}
-                  assetsByRole={assetsByRole}
-                  onUpload={uploadAssets}
-                  onDelete={deleteAsset}
-                  onUpdateTags={updateAssetTags}
-                />
+                <AssetNodeCanvas onAddCharacter={addCharacter}>
+                  <article className="assetNode characterNode">
+                    <span className="nodePort output" />
+                    <div className="nodeHeader">
+                      <span className="eyebrow">Character Node</span>
+                      <strong>Cast</strong>
+                    </div>
+                    <p className="helperText">{voicesStatus}</p>
+                    <div className="characterList">
+                      {(showDraft.characters || []).map((character, index) => (
+                        <article className="characterRow" key={character.id || index}>
+                          <label className="field compactCharacterField">
+                            <span>Name</span>
+                            <input
+                              value={character.name}
+                              onChange={(event) => updateCharacter(index, { name: event.target.value })}
+                            />
+                          </label>
+                          <label className="field compactCharacterField">
+                            <span>Role</span>
+                            <select
+                              value={character.role}
+                              onChange={(event) => updateCharacter(index, { role: event.target.value })}
+                            >
+                              {character.role && !["main", "supporting", "guest"].includes(String(character.role).toLowerCase()) ? (
+                                <option value={character.role}>{character.role}</option>
+                              ) : null}
+                              <option value="main">Main</option>
+                              <option value="supporting">Supporting</option>
+                              <option value="guest">Guest</option>
+                            </select>
+                          </label>
+                          <label className="field compactCharacterField characterVoiceField">
+                            <span>Voice</span>
+                            <select
+                              value={character.voiceId || ""}
+                              onChange={(event) => updateCharacter(index, { voiceId: event.target.value })}
+                            >
+                              <VoiceSelectOptions voices={voices} currentValue={character.voiceId} />
+                            </select>
+                          </label>
+                          <label className="field compactCharacterField characterNotesField">
+                            <span>Headshot / visual notes</span>
+                            <textarea
+                              value={character.visualNotes}
+                              onChange={(event) => updateCharacter(index, { visualNotes: event.target.value })}
+                              rows={1}
+                              placeholder="Describe the character headshot and visual identity..."
+                            />
+                          </label>
+                          <button className="quietButton iconOnly characterRemoveButton" onClick={() => removeCharacter(index)} title="Remove character">
+                            <Trash2 size={15} />
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  </article>
+                  <article className="assetNode visualFrameNode">
+                    <span className="nodePort output" />
+                    <div className="nodeHeader">
+                      <span className="eyebrow">Visual Frame Nodes</span>
+                      <strong>Frames & Inserts</strong>
+                    </div>
+                    <CastVisualLibrary
+                      uploadShotTypes={uploadShotTypes}
+                      assetCounts={assetCounts}
+                      assetsByRole={assetsByRole}
+                      onUpload={uploadAssets}
+                      onDelete={deleteAsset}
+                      onUpdateTags={updateAssetTags}
+                    />
+                  </article>
+                </AssetNodeCanvas>
               </CollapsiblePanel>
             )}
 
@@ -2609,6 +2666,7 @@ export default function App() {
               onUpdate={updateProductionLine}
               onSetCharacter={setProductionCharacter}
               onDeleteLine={deleteProductionLine}
+              onAddLine={addProductionLine}
               onReorderLine={reorderProductionLine}
               onGroupLines={groupProductionLines}
               onUngroupLines={ungroupProductionLines}
@@ -5433,6 +5491,7 @@ function ProductionMapPanel({
   onUpdate,
   onSetCharacter,
   onDeleteLine,
+  onAddLine,
   onReorderLine,
   onGroupLines,
   onUngroupLines,
@@ -5445,10 +5504,11 @@ function ProductionMapPanel({
   busy
 }) {
   const hasLines = productionMap.length > 0;
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [selectedLineIds, setSelectedLineIds] = useState(() => new Set());
   const [dragLineId, setDragLineId] = useState("");
   const [dropTarget, setDropTarget] = useState(null);
+  const [editingLineId, setEditingLineId] = useState("");
   const [collapsedGroupIds, setCollapsedGroupIds] = useState(() => new Set());
   const groupBlocks = useMemo(() => productionMapGroupBlocks(productionMap), [productionMap]);
   const selectedIds = useMemo(() => [...selectedLineIds], [selectedLineIds]);
@@ -5457,6 +5517,7 @@ function ProductionMapPanel({
     [productionMap, selectedLineIds]
   );
   const selectedGroupedLines = selectedLines.filter((line) => line.groupId);
+  const editingLine = productionMap.find((line) => line.id === editingLineId) || null;
 
   useEffect(() => {
     setSelectedLineIds((current) => {
@@ -5474,6 +5535,15 @@ function ProductionMapPanel({
       return next.size === current.size ? current : next;
     });
   }, [groupBlocks]);
+
+  useEffect(() => {
+    if (!editingLineId) return undefined;
+    function handleEscape(event) {
+      if (event.key === "Escape") setEditingLineId("");
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [editingLineId]);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -5579,6 +5649,57 @@ function ProductionMapPanel({
     });
   }
 
+  function reviewStatusForLine(line) {
+    return line.lineType === "insert"
+      ? line.videoStatus || (line.videoTake?.localUrl ? "generated" : "pending")
+      : line.audioStatus || (line.audioTake?.localUrl ? "pending" : "missing");
+  }
+
+  function openLineEditor(lineId) {
+    setEditingLineId(lineId);
+    setSelectedLineIds(new Set([lineId]));
+  }
+
+  function renderLineEditor(line) {
+    if (!line) return null;
+    const isInsert = line.lineType === "insert";
+    const selectedAsset = visualAssets.find((asset) => asset.id === line.assetId);
+    const selectedMask = maskAssets.find((asset) => asset.id === line.maskAssetId);
+    return (
+      <ProductionLineRow
+        key={line.id}
+        line={line}
+        isInsert={isInsert}
+        selectedAsset={selectedAsset}
+        selectedMask={selectedMask}
+        isSelected
+        isDragging={false}
+        dropPlacement=""
+        reviewStatus={reviewStatusForLine(line)}
+        characters={characters}
+        voices={voices}
+        shotTypes={shotTypes}
+        assetsForLine={assetsForLine}
+        busy={busy}
+        busyAction={busyAction}
+        onSelect={selectRow}
+        onDragStart={() => {}}
+        onDragOver={() => {}}
+        onDrop={() => {}}
+        onClearDrop={() => {}}
+        onUpdate={onUpdate}
+        onSetCharacter={onSetCharacter}
+        onUpdateShotRole={updateShotRole}
+        onRegenerateAudio={onRegenerateAudio}
+        onSetAudioStatus={onSetAudioStatus}
+        onOpenMaskEditor={onOpenMaskEditor}
+        onGenerateInsertVideo={onGenerateInsertVideo}
+        onUploadInsertVideo={onUploadInsertVideo}
+        onDragEnd={() => {}}
+      />
+    );
+  }
+
   return (
     <section className={`workPanel productionMapPanel collapsiblePanel ${isOpen ? "open" : "closed"}`}>
       <div className="panelHeader collapsibleHeader">
@@ -5590,8 +5711,8 @@ function ProductionMapPanel({
         >
           <ChevronRight size={18} className={isOpen ? "open" : ""} />
           <div>
-            <span className="eyebrow">Script Production Map</span>
-            <h3>Voices, Shots & Masks</h3>
+            <span className="eyebrow">Storyboard</span>
+            <h3>Frames</h3>
           </div>
         </button>
         <div className="buttonRow">
@@ -5615,129 +5736,200 @@ function ProductionMapPanel({
       </div>
 
       {isOpen && (hasLines ? (
-        <div className="productionBlockList">
-          {groupBlocks.map((block) => {
-            if (block.type === "line") {
-              const line = block.line;
+        <>
+          {groupBlocks.some((block) => block.type === "group") ? (
+            <div className="storyboardGroupStrip">
+              {groupBlocks.filter((block) => block.type === "group").map((block) => {
+                const groupCollapsed = collapsedGroupIds.has(block.groupId);
+                return (
+                  <button
+                    type="button"
+                    key={block.blockId}
+                    className={`storyboardGroupChip ${groupCollapsed ? "collapsed" : ""}`}
+                    onClick={() => toggleGroup(block.groupId)}
+                    aria-expanded={!groupCollapsed}
+                  >
+                    <ChevronRight size={14} className={groupCollapsed ? "" : "open"} />
+                    <span>{block.groupTitle}</span>
+                    <Pill tone="neutral">{block.lines.length}</Pill>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+          <div className="productionStoryboardGrid">
+            {productionMap.map((line) => {
               const isInsert = line.lineType === "insert";
               const selectedAsset = visualAssets.find((asset) => asset.id === line.assetId);
-              const selectedMask = maskAssets.find((asset) => asset.id === line.maskAssetId);
-              const isSelected = selectedLineIds.has(line.id);
-              const isDragging = dragLineId === line.id;
-              const dropPlacement = dropTarget?.lineId === line.id ? dropTarget.placement : "";
-              const reviewStatus = isInsert
-                ? line.videoStatus || (line.videoTake?.localUrl ? "generated" : "pending")
-                : line.audioStatus || (line.audioTake?.localUrl ? "pending" : "missing");
               return (
-                <ProductionLineRow
+                <StoryboardFrameCard
                   key={line.id}
                   line={line}
                   isInsert={isInsert}
                   selectedAsset={selectedAsset}
-                  selectedMask={selectedMask}
-                  isSelected={isSelected}
-                  isDragging={isDragging}
-                  dropPlacement={dropPlacement}
-                  reviewStatus={reviewStatus}
-                  characters={characters}
-                  voices={voices}
-                  shotTypes={shotTypes}
-                  assetsForLine={assetsForLine}
+                  isSelected={selectedLineIds.has(line.id)}
+                  isDragging={dragLineId === line.id}
+                  dropPlacement={dropTarget?.lineId === line.id ? dropTarget.placement : ""}
+                  reviewStatus={reviewStatusForLine(line)}
                   busy={busy}
-                  busyAction={busyAction}
                   onSelect={selectRow}
+                  onOpen={openLineEditor}
+                  onAddLine={onAddLine}
                   onDragStart={startDrag}
                   onDragOver={updateDropTarget}
                   onDrop={finishDrop}
                   onClearDrop={() => setDropTarget(null)}
-                  onUpdate={onUpdate}
-                  onSetCharacter={onSetCharacter}
-                  onUpdateShotRole={updateShotRole}
-                  onRegenerateAudio={onRegenerateAudio}
-                  onSetAudioStatus={onSetAudioStatus}
-                  onOpenMaskEditor={onOpenMaskEditor}
-                  onGenerateInsertVideo={onGenerateInsertVideo}
-                  onUploadInsertVideo={onUploadInsertVideo}
                   onDragEnd={() => {
                     setDragLineId("");
                     setDropTarget(null);
                   }}
                 />
               );
-            }
-
-            const groupCollapsed = collapsedGroupIds.has(block.groupId);
-            return (
-              <section className={`productionGroupBlock ${groupCollapsed ? "collapsed" : ""}`} key={block.blockId}>
-                <button
-                  type="button"
-                  className="productionGroupHeader"
-                  onClick={() => toggleGroup(block.groupId)}
-                  aria-expanded={!groupCollapsed}
-                >
-                  <ChevronRight size={16} className={groupCollapsed ? "" : "open"} />
-                  <span>{block.groupTitle}</span>
-                  <Pill tone="neutral">{block.lines.length} lines</Pill>
-                </button>
-                {!groupCollapsed && (
-                  <div className="productionLineList">
-                    {block.lines.map((line) => {
-                      const isInsert = line.lineType === "insert";
-                      const selectedAsset = visualAssets.find((asset) => asset.id === line.assetId);
-                      const selectedMask = maskAssets.find((asset) => asset.id === line.maskAssetId);
-                      const isSelected = selectedLineIds.has(line.id);
-                      const isDragging = dragLineId === line.id;
-                      const dropPlacement = dropTarget?.lineId === line.id ? dropTarget.placement : "";
-                      const reviewStatus = isInsert
-                        ? line.videoStatus || (line.videoTake?.localUrl ? "generated" : "pending")
-                        : line.audioStatus || (line.audioTake?.localUrl ? "pending" : "missing");
-                      return (
-                        <ProductionLineRow
-                          key={line.id}
-                          line={line}
-                          isInsert={isInsert}
-                          selectedAsset={selectedAsset}
-                          selectedMask={selectedMask}
-                          isSelected={isSelected}
-                          isDragging={isDragging}
-                          dropPlacement={dropPlacement}
-                          reviewStatus={reviewStatus}
-                          characters={characters}
-                          voices={voices}
-                          shotTypes={shotTypes}
-                          assetsForLine={assetsForLine}
-                          busy={busy}
-                          busyAction={busyAction}
-                          onSelect={selectRow}
-                          onDragStart={startDrag}
-                          onDragOver={updateDropTarget}
-                          onDrop={finishDrop}
-                          onClearDrop={() => setDropTarget(null)}
-                          onUpdate={onUpdate}
-                          onSetCharacter={onSetCharacter}
-                          onUpdateShotRole={updateShotRole}
-                          onRegenerateAudio={onRegenerateAudio}
-                          onSetAudioStatus={onSetAudioStatus}
-                          onOpenMaskEditor={onOpenMaskEditor}
-                          onGenerateInsertVideo={onGenerateInsertVideo}
-                          onUploadInsertVideo={onUploadInsertVideo}
-                          onDragEnd={() => {
-                            setDragLineId("");
-                            setDropTarget(null);
-                          }}
-                        />
-                      );
-                    })}
+            })}
+          </div>
+          {editingLine ? (
+            <div
+              className="storyboardEditorBackdrop"
+              role="dialog"
+              aria-modal="true"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setEditingLineId("");
+              }}
+            >
+              <div className="storyboardEditorPanel">
+                <div className="storyboardEditorHeader">
+                  <div>
+                    <span className="eyebrow">{editingLine.lineType === "insert" ? "Insert Shot" : "Dialogue Shot"}</span>
+                    <h3>
+                      Frame {editingLine.index} / {editingLine.speaker || "Speaker"}
+                    </h3>
                   </div>
-                )}
-              </section>
-            );
-          })}
-        </div>
+                  <button className="quietButton iconOnly" type="button" onClick={() => setEditingLineId("")}>
+                    <X size={18} />
+                  </button>
+                </div>
+                {renderLineEditor(editingLine)}
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="emptyState">Build a plan from a dialogue script to create line assignments.</div>
       ))}
     </section>
+  );
+}
+
+function StoryboardFrameCard({
+  line,
+  isInsert,
+  selectedAsset,
+  isSelected,
+  isDragging,
+  dropPlacement,
+  reviewStatus,
+  busy,
+  onSelect,
+  onOpen,
+  onAddLine,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onClearDrop,
+  onDragEnd
+}) {
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const videoUrl = line.videoTake?.proxyLocalUrl || line.videoTake?.localUrl || "";
+  const shotLabel = isInsert
+    ? "Insert"
+    : {
+        character_one_shot: "One Shot",
+        medium_two_shot: "Two Shot",
+        wide_shot: "Wide"
+      }[line.shotRole] || "Shot";
+  const statusLabel = isInsert ? videoStatusLabel(reviewStatus) : audioStatusLabel(reviewStatus);
+  const frameTitle = `Frame ${line.index}: ${line.speaker || (isInsert ? "INSERT" : "Speaker")} / ${shotLabel} / ${statusLabel}`;
+  const addOptions = [
+    ["insert_shot", "Insert Shot"],
+    ["character_one_shot", "One Shot"],
+    ["medium_two_shot", "Two Shot"],
+    ["wide_shot", "Wide Shot"]
+  ];
+
+  return (
+    <article
+      className={[
+        "storyboardFrameCard",
+        isInsert ? "insertFrame" : "",
+        isSelected ? "selected" : "",
+        isDragging ? "dragging" : "",
+        dropPlacement ? `drop-${dropPlacement}` : ""
+      ].filter(Boolean).join(" ")}
+      draggable
+      tabIndex={0}
+      aria-selected={isSelected}
+      title={frameTitle}
+      onClick={(event) => onSelect(event, line.id)}
+      onDoubleClick={(event) => {
+        if (!productionMapInteractiveEvent(event)) onOpen(line.id);
+      }}
+      onDragStart={(event) => {
+        if (productionMapInteractiveEvent(event)) {
+          event.preventDefault();
+          return;
+        }
+        onDragStart(event, line.id);
+      }}
+      onDragOver={(event) => onDragOver(event, line.id)}
+      onDragLeave={(event) => {
+        if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+          onClearDrop();
+        }
+      }}
+      onDrop={(event) => onDrop(event, line.id)}
+      onDragEnd={onDragEnd}
+    >
+      <div className="storyboardFrameMedia">
+        {videoUrl ? (
+          <video src={videoUrl} muted playsInline preload="metadata" />
+        ) : selectedAsset?.localUrl ? (
+          <img src={selectedAsset.localUrl} alt={selectedAsset.fileName || ""} />
+        ) : (
+          <div className="storyboardFrameEmpty">
+            <Image size={22} />
+          </div>
+        )}
+        <span className="storyboardFrameNumber">#{line.index}</span>
+        <button
+          type="button"
+          className="storyboardAddButton"
+          onClick={(event) => {
+            event.stopPropagation();
+            setAddMenuOpen((value) => !value);
+          }}
+          disabled={busy}
+          aria-label={`Add shot after frame ${line.index}`}
+        >
+          <Plus size={16} />
+        </button>
+        {addMenuOpen ? (
+          <div className="storyboardAddMenu" onClick={(event) => event.stopPropagation()}>
+            {addOptions.map(([kind, label]) => (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => {
+                  onAddLine?.(line.id, kind);
+                  setAddMenuOpen(false);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
