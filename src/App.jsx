@@ -2095,18 +2095,19 @@ export default function App() {
   }
 
   function addProductionLine(afterLineId, kind = "character_one_shot") {
+    const isInsert = kind === "insert_shot";
+    const newLineId = createLocalId(isInsert ? "insert-line" : "storyboard-line");
     setEpisodeDraft((prev) => {
       if (!prev) return prev;
       const lines = [...(prev.productionMap || [])];
       const insertIndex = afterLineId ? lines.findIndex((line) => line.id === afterLineId) + 1 : lines.length;
       const safeIndex = insertIndex > 0 ? insertIndex : lines.length;
-      const isInsert = kind === "insert_shot";
       const newLine = {
-        id: createLocalId(isInsert ? "insert-line" : "storyboard-line"),
+        id: newLineId,
         index: safeIndex + 1,
         lineType: isInsert ? "insert" : "dialogue",
-        speaker: isInsert ? "INSERT" : "Speaker",
-        text: isInsert ? "" : "New dialogue line",
+        speaker: isInsert ? "INSERT" : "",
+        text: "",
         characterId: "",
         voiceId: "",
         shotRole: isInsert ? "insert_shot" : kind,
@@ -2127,6 +2128,7 @@ export default function App() {
       return next;
     });
     setStatus("Storyboard shot added. Script source text was not changed.");
+    return newLineId;
   }
 
   function reorderProductionLine(sourceLineId, targetLineId, placement = "before") {
@@ -6288,6 +6290,13 @@ function ProductionMapPanel({
     setSelectedLineIds(new Set([lineId]));
   }
 
+  function addStoryboardFrame(afterLineId, kind) {
+    const newLineId = onAddLine?.(afterLineId, kind);
+    if (newLineId) {
+      openLineEditor(newLineId);
+    }
+  }
+
   function renderLineEditor(line) {
     if (!line) return null;
     const isInsert = line.lineType === "insert";
@@ -6395,7 +6404,7 @@ function ProductionMapPanel({
                   busy={busy}
                   onSelect={selectRow}
                   onOpen={openLineEditor}
-                  onAddLine={onAddLine}
+                  onAddLine={addStoryboardFrame}
                   onDragStart={startDrag}
                   onDragOver={updateDropTarget}
                   onDrop={finishDrop}
