@@ -2833,7 +2833,7 @@ export default function App() {
         )}
 
         {workspaceView && ["preview", "composite", "delivery"].includes(activeWorkflowKey) && (
-          <section className="approvalsView">
+          <section className="workflowStageView">
             <div className="editorBand">
               <div>
                 <span className="eyebrow">{activeWorkflowSection?.label}</span>

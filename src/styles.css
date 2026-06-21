@@ -396,7 +396,7 @@ main {
 }
 
 .studioGrid,
-.approvalsView {
+.workflowStageView {
   min-width: 0;
 }
 
@@ -4221,7 +4221,7 @@ label:has(textarea:disabled) {
   font-size: 13px;
 }
 
-.approvalsView {
+.workflowStageView {
   max-width: 1240px;
 }
 
