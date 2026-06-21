@@ -320,6 +320,12 @@ function normalizeResolutionMode(value) {
   return value === "standard" ? "standard" : "high";
 }
 
+function cssAspectRatio(aspectRatio = "16:9") {
+  if (aspectRatio === "9:16") return "9 / 16";
+  if (aspectRatio === "21:9") return "21 / 9";
+  return "16 / 9";
+}
+
 function normalizePromotionTemplates(templates = {}) {
   return {
     ...promotionTemplateDefaults,
@@ -3208,55 +3214,72 @@ export default function App() {
               ))}
             </div>
             ) : null}
-            {activeWorkflowSection.key === "preview" ? <AutomationRunbookPanel automation={activeAutomation} safety={safety} /> : null}
-            <FinalReviewPanel
-              mode={activeWorkflowSection.key}
-              audioOutput={audioOutput}
-              previewOutput={previewOutput}
-              finalOutput={finalOutput}
-              baseFinalOutput={baseFinalOutput}
-              finishedMasterOutput={finishedMasterOutput}
-              previewOutputs={previewOutputs}
-              finalOutputs={finalOutputs}
-              finishedMasterOutputs={finishedMasterOutputs}
-              manifestOutputs={manifestOutputs}
-              finalManifestOutputs={finalManifestOutputs}
-              audioOutputs={audioOutputs}
-              finalAudioOutputs={finalAudioOutputs}
-              reportOutputs={reportOutputs}
-              packageOutputs={packageOutputs}
-              thumbnailOutputs={thumbnailOutputs}
-              drafts={drafts}
-              selectedFormat={selectedFormat}
-              socialConfig={campaignConfig}
-              integrations={integrations}
-              youtubeAuth={youtubeAuth}
-              safety={safety}
-              launchReadiness={launchReadiness}
-              hasProductionMap={productionMap.length > 0}
-              readiness={renderReadiness}
-              canBuildPreview={previewBuildReady}
-              canRenderFinal={finalRenderReady}
-              busy={busy}
-              busyAction={busyAction}
-              onRebuildAudio={rebuildAudioMix}
-              onBuildPreview={runPipeline}
-              onRenderFinal={renderFinalEpisode}
-              onUploadFinishingLayers={uploadFinishingLayerFiles}
-              onSaveFinishingLayers={saveFinishingLayers}
-              onExportFinishedMaster={exportFinishedMaster}
-              onGenerateFinishingMusic={generateFinishingMusic}
-              onGenerateThumbnails={generateThumbnails}
-              onSelectThumbnail={selectThumbnail}
-              onSavePublishingDraft={savePublishingDraft}
-              onExportPackage={exportFinalPackage}
-              onCheckLaunchReadiness={checkLaunchReadiness}
-              onUploadYoutubeDraft={uploadYoutubeDraft}
-              onRetryYoutubeThumbnail={retryYoutubeThumbnail}
-              onCheckYoutubeStatus={checkYoutubeStatus}
-              onConnectYoutube={connectYoutube}
-              youtubeUploadOutputs={youtubeUploadOutputs}
-            />
+            {activeWorkflowSection.key === "preview" ? (
+              <PreviewWorkflowPanel
+                audioOutput={audioOutput}
+                previewOutput={previewOutput}
+                finalOutput={baseFinalOutput}
+                selectedFormat={selectedFormat}
+                readiness={renderReadiness}
+                hasProductionMap={productionMap.length > 0}
+                canBuildPreview={previewBuildReady}
+                canRenderFinal={finalRenderReady}
+                busy={busy}
+                busyAction={busyAction}
+                onRebuildAudio={rebuildAudioMix}
+                onBuildPreview={runPipeline}
+                onRenderFinal={renderFinalEpisode}
+              />
+            ) : (
+              <FinalReviewPanel
+                mode={activeWorkflowSection.key}
+                audioOutput={audioOutput}
+                previewOutput={previewOutput}
+                finalOutput={finalOutput}
+                baseFinalOutput={baseFinalOutput}
+                finishedMasterOutput={finishedMasterOutput}
+                previewOutputs={previewOutputs}
+                finalOutputs={finalOutputs}
+                finishedMasterOutputs={finishedMasterOutputs}
+                manifestOutputs={manifestOutputs}
+                finalManifestOutputs={finalManifestOutputs}
+                audioOutputs={audioOutputs}
+                finalAudioOutputs={finalAudioOutputs}
+                reportOutputs={reportOutputs}
+                packageOutputs={packageOutputs}
+                thumbnailOutputs={thumbnailOutputs}
+                drafts={drafts}
+                selectedFormat={selectedFormat}
+                socialConfig={campaignConfig}
+                integrations={integrations}
+                youtubeAuth={youtubeAuth}
+                safety={safety}
+                launchReadiness={launchReadiness}
+                hasProductionMap={productionMap.length > 0}
+                readiness={renderReadiness}
+                canBuildPreview={previewBuildReady}
+                canRenderFinal={finalRenderReady}
+                busy={busy}
+                busyAction={busyAction}
+                onRebuildAudio={rebuildAudioMix}
+                onBuildPreview={runPipeline}
+                onRenderFinal={renderFinalEpisode}
+                onUploadFinishingLayers={uploadFinishingLayerFiles}
+                onSaveFinishingLayers={saveFinishingLayers}
+                onExportFinishedMaster={exportFinishedMaster}
+                onGenerateFinishingMusic={generateFinishingMusic}
+                onGenerateThumbnails={generateThumbnails}
+                onSelectThumbnail={selectThumbnail}
+                onSavePublishingDraft={savePublishingDraft}
+                onExportPackage={exportFinalPackage}
+                onCheckLaunchReadiness={checkLaunchReadiness}
+                onUploadYoutubeDraft={uploadYoutubeDraft}
+                onRetryYoutubeThumbnail={retryYoutubeThumbnail}
+                onCheckYoutubeStatus={checkYoutubeStatus}
+                onConnectYoutube={connectYoutube}
+                youtubeUploadOutputs={youtubeUploadOutputs}
+              />
+            )}
             <div className="jobLog">
               {(activeEpisode?.jobLog || []).slice(0, 25).map((item) => (
                 <p key={item.id}>
@@ -3471,6 +3494,121 @@ function AutomationRunbookPanel({ automation = {}, safety = {} }) {
   );
 }
 
+function PreviewWorkflowPanel({
+  audioOutput,
+  previewOutput,
+  finalOutput,
+  selectedFormat,
+  readiness,
+  hasProductionMap,
+  canBuildPreview,
+  canRenderFinal,
+  busy,
+  busyAction,
+  onRebuildAudio,
+  onBuildPreview,
+  onRenderFinal
+}) {
+  const buildBusy = busyAction === "build-preview";
+  const audioBusy = busyAction === "rebuild-audio";
+  const renderBusy = busyAction === "render-final";
+  const activeVideo = renderBusy ? null : finalOutput || previewOutput;
+  const aspect = cssAspectRatio(selectedFormat.aspectRatio);
+  const steps = [
+    { label: "Storyboard", done: hasProductionMap },
+    { label: "Audio", done: Boolean(audioOutput?.localUrl) },
+    { label: "Preview", done: Boolean(previewOutput?.localUrl) },
+    { label: "Final", done: Boolean(finalOutput?.localUrl) }
+  ];
+
+  return (
+    <section className="previewWorkflowCanvas">
+      <article className="previewCommandNode">
+        <div className="nodeHeader previewNodeHeader">
+          <div>
+            <span className="eyebrow">Preview Node</span>
+            <strong>Build Preview</strong>
+          </div>
+          <Pill tone={finalOutput ? "good" : previewOutput ? "neutral" : "warn"}>
+            {finalOutput ? "final ready" : previewOutput ? "preview ready" : "waiting"}
+          </Pill>
+        </div>
+        <div className="previewStepRail">
+          {steps.map((step) => (
+            <span key={step.label} className={step.done ? "done" : ""}>
+              {step.done ? <Check size={12} /> : <CircleAlert size={12} />}
+              {step.label}
+            </span>
+          ))}
+        </div>
+        <div className="previewCommandActions">
+          <button
+            className="primaryButton"
+            onClick={onBuildPreview}
+            disabled={!canBuildPreview || busy}
+            title={canBuildPreview ? "Create or refresh the local preview" : readiness.setupReady ? "Approve Script Plan and Voice & Audio first" : "Finish the preview setup checks first"}
+          >
+            {buildBusy ? <RefreshCw className="spin" size={17} /> : <Play size={17} />}
+            Build Preview
+          </button>
+          <button className="secondaryButton" onClick={onRebuildAudio} disabled={!hasProductionMap || busy}>
+            {audioBusy ? <RefreshCw className="spin" size={16} /> : <RefreshCw size={16} />}
+            Rebuild Audio
+          </button>
+          <button
+            className="secondaryButton"
+            onClick={onRenderFinal}
+            disabled={!canRenderFinal || busy}
+            title={canRenderFinal ? "Create final local render" : "Build and approve the preview before rendering final video"}
+          >
+            {renderBusy ? <RefreshCw className="spin" size={16} /> : <Film size={16} />}
+            Render
+          </button>
+        </div>
+      </article>
+
+      <article className={`previewOutputNode ${activeVideo ? "hasVideo" : ""} ${renderBusy ? "rendering" : ""}`}>
+        <div className="previewOutputHeader">
+          <div>
+            <span className="eyebrow">{finalOutput ? "Final Render" : "Preview Output"}</span>
+            <strong>{activeVideo?.name || activeVideo?.fileName || (renderBusy ? "Rendering final video" : "No preview built yet")}</strong>
+          </div>
+          {buildBusy || renderBusy ? <RefreshCw className="spin renderRunningIcon" size={17} /> : null}
+        </div>
+
+        {renderBusy ? (
+          <div className="previewProgressCard">
+            <Film size={26} />
+            <strong>Rendering final video</strong>
+            <div className="indeterminateProgress"><span /></div>
+          </div>
+        ) : activeVideo ? (
+          <video src={activeVideo.localUrl} controls playsInline style={{ aspectRatio: aspect }} />
+        ) : (
+          <div className="previewEmptySlate">
+            <Play size={28} />
+            <span>Build Preview will assemble storyboard frames with the current ElevenLabs dialogue.</span>
+          </div>
+        )}
+      </article>
+
+      <article className="previewAudioNode">
+        <div className="audioReviewHeader">
+          <div>
+            <span className="eyebrow">Final Audio</span>
+            <strong>{audioOutput?.name || "No mix yet"}</strong>
+          </div>
+        </div>
+        {audioOutput?.localUrl ? (
+          <audio controls preload="metadata" src={audioOutput.localUrl} />
+        ) : (
+          <div className="emptyState compact">No audio preview yet.</div>
+        )}
+      </article>
+    </section>
+  );
+}
+
 function FinalReviewPanel({
   mode = "preview",
   audioOutput,
@@ -3646,7 +3784,7 @@ function FinalReviewPanel({
               src={reviewVideo.localUrl}
               controls
               playsInline
-              style={{ aspectRatio: selectedFormat.aspectRatio === "9:16" ? "9 / 16" : "16 / 9" }}
+              style={{ aspectRatio: cssAspectRatio(selectedFormat.aspectRatio) }}
             />
             <div>
               <strong>{finalOutput ? "Final local render" : "Local episode preview"}</strong>
