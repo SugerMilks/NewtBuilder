@@ -538,8 +538,31 @@ function episodePreviewImage(episode) {
   return selectedThumbnail?.localUrl || aiThumbnail?.localUrl || fallbackAsset?.localUrl || "";
 }
 
+function episodePreviewPriority(episode) {
+  if (episodeOutputsOfType(episode, "thumbnail_image").length) return 5;
+  if (episodeOutputsOfType(episode, "youtube_upload").some((output) => output.videoId)) return 4;
+  if (episodeOutputsOfType(episode, "finished_master").length) return 3;
+  if (episodeOutputsOfType(episode, "final_video").length) return 2;
+  if (episodeOutputsOfType(episode, "preview_video").length) return 1;
+  return 0;
+}
+
+function episodePreviewSortTime(episode) {
+  const updated = Date.parse(episode?.updatedAt || "");
+  if (Number.isFinite(updated)) return updated;
+  const created = Date.parse(episode?.createdAt || "");
+  return Number.isFinite(created) ? created : 0;
+}
+
 function showPreviewImage(episodes = []) {
-  return episodes.map(episodePreviewImage).find(Boolean) || "";
+  return [...episodes]
+    .map((episode) => ({
+      previewImage: episodePreviewImage(episode),
+      priority: episodePreviewPriority(episode),
+      sortTime: episodePreviewSortTime(episode)
+    }))
+    .filter((item) => item.previewImage)
+    .sort((a, b) => b.priority - a.priority || b.sortTime - a.sortTime)[0]?.previewImage || "";
 }
 
 function episodeStatusSummary(episode) {
