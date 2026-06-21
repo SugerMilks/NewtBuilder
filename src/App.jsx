@@ -96,87 +96,10 @@ const automationControls = [
   }
 ];
 
-const automationPresets = [
-  {
-    id: "manual",
-    label: "Manual review",
-    values: {
-      parseScript: false,
-      generateVoices: false,
-      generateInsertVideos: false,
-      renderEpisode: false,
-      generateThumbnails: false,
-      draftYoutubeMetadata: false,
-      uploadYoutube: false,
-      draftSocialCampaign: false
-    }
-  },
-  {
-    id: "autoPrep",
-    label: "Auto prep",
-    values: {
-      parseScript: true,
-      generateVoices: false,
-      generateInsertVideos: false,
-      renderEpisode: false,
-      generateThumbnails: true,
-      draftYoutubeMetadata: true,
-      uploadYoutube: false,
-      draftSocialCampaign: true
-    }
-  },
-  {
-    id: "autoProduction",
-    label: "Auto production",
-    values: {
-      parseScript: true,
-      generateVoices: true,
-      generateInsertVideos: true,
-      renderEpisode: true,
-      generateThumbnails: true,
-      draftYoutubeMetadata: true,
-      uploadYoutube: false,
-      draftSocialCampaign: true
-    }
-  }
-];
-
 const promotionTemplateDefaults = {
   youtubeCommunity: "{{title}}\n\n{{hook}}\n\nWatch here: {{youtube_url}}\n\n{{hashtags}}",
   pinnedComment: "Thanks for watching {{title}}. What moment stood out to you? Subscribe for the next episode."
 };
-
-const promotionTemplateFields = [
-  { key: "youtubeCommunity", label: "YouTube Community", rows: 4 },
-  { key: "pinnedComment", label: "Pinned Comment", rows: 3 }
-];
-
-const integrationSetupRows = [
-  {
-    key: "youtube",
-    label: "YouTube",
-    purpose: "Private draft upload, thumbnail set, and draft status checks.",
-    env: "YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET"
-  },
-  {
-    key: "elevenlabs",
-    label: "ElevenLabs",
-    purpose: "Character voices and dialogue audio.",
-    env: "ELEVEN_API_KEY"
-  },
-  {
-    key: "fal",
-    label: "Fal",
-    purpose: "Lip-sync, insert videos, and AI thumbnail generation.",
-    env: "FAL_KEY"
-  },
-  {
-    key: "openai",
-    label: "OpenAI",
-    purpose: "Reserved for future script, metadata, and campaign intelligence.",
-    env: "OPENAI_API_KEY"
-  }
-];
 
 const shotAssetTypes = [
   {
@@ -1094,11 +1017,6 @@ export default function App() {
 
   function openShowDashboard() {
     setAppView("show");
-  }
-
-  function openShowSettings() {
-    setAppView("episode");
-    setActiveTab("setup");
   }
 
   async function reloadEpisodes(showId = activeShowId) {
@@ -2159,16 +2077,6 @@ export default function App() {
     });
   }
 
-  function applyAutomationPreset(values) {
-    setShowDraft((prev) => ({
-      ...prev,
-      automation: {
-        ...prev.automation,
-        ...values
-      }
-    }));
-  }
-
   function updateEpisodeDraft(path, value) {
     setEpisodeDraft((prev) => {
       const next = structuredClone(prev);
@@ -2298,12 +2206,10 @@ export default function App() {
   const assetNodeConnections = normalizeAssetNodeConnections(drafts.assetNodeConnections);
   const coreAssetNodesConnected = Boolean(assetNodeConnections.character && assetNodeConnections.visual);
   const setupApproved = Boolean(drafts.workflow?.setupApproved);
-  const activeAutomation = showDraft?.automation || {};
   const socialConfig = showDraft?.platforms?.social || activeShow?.platforms?.social || {};
-  const promotionTemplates = normalizePromotionTemplates(socialConfig.templates);
   const campaignConfig = {
     ...socialConfig,
-    templates: promotionTemplates,
+    templates: normalizePromotionTemplates(socialConfig.templates),
     showName: showDraft?.name || activeShow?.name || "",
     hashtags: showDraft?.creative?.recurringHashtags || activeShow?.creative?.recurringHashtags || [],
     cta: showDraft?.creative?.defaultCta || activeShow?.creative?.defaultCta || ""
@@ -2491,15 +2397,6 @@ export default function App() {
               </button>
               <button className="iconButton dangerIcon" onClick={deleteActiveShow} title="Delete show" disabled={!activeShow || busy}>
                 <Trash2 size={17} />
-              </button>
-              <button
-                className={activeTab === "settings" && workspaceView ? "iconButton active" : "iconButton"}
-                onClick={openShowSettings}
-                title="Settings"
-                aria-label="Settings"
-                disabled={!activeShow || busy}
-              >
-                <Settings2 size={17} />
               </button>
               {workspaceView ? (
                 <button className="secondaryButton" type="button" onClick={() => renameEpisode()} disabled={!activeEpisode || busy}>
@@ -2920,306 +2817,6 @@ export default function App() {
             )}
 
           </div>
-        )}
-
-        {workspaceView && activeTab === "settings" && showDraft && (
-          <section className="settingsView">
-            <div className="editorBand">
-              <div>
-                <span className="eyebrow">Show Settings</span>
-                <h3>Automation, Format & Publishing</h3>
-              </div>
-              <button className="primaryButton" onClick={saveShow} disabled={busy}>
-                <Save size={18} />
-                Save Settings
-              </button>
-            </div>
-
-            <div className="settingsStack">
-              <section className="settingsGroup">
-                <div className="settingsGroupHeader">
-                  <span className="eyebrow">Core Setup</span>
-                  <h3>Format & Production Defaults</h3>
-                </div>
-                <div className="settingsGroupGrid">
-                  <div className="workPanel">
-                    <div className="panelHeader">
-                      <div>
-                        <span className="eyebrow">Format</span>
-                        <h3>Episode Format</h3>
-                      </div>
-                    </div>
-                    <Field label="Aspect">
-                      <select value={showDraft.shortFormat?.aspectRatio || "16:9"} onChange={(event) => setShowAspect(event.target.value)}>
-                        {formatOptions.map((option) => (
-                          <option key={option.aspectRatio} value={option.aspectRatio}>
-                            {option.label} {option.detail}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
-                    <div className="twoColumn">
-                      <Field label="Resolution mode">
-                        <select
-                          value={normalizeResolutionMode(showDraft.shortFormat?.resolutionMode)}
-                          onChange={(event) => setShowResolutionMode(event.target.value)}
-                        >
-                          <option value="high">High Definition (1080p)</option>
-                          <option value="standard">Standard (720p)</option>
-                        </select>
-                      </Field>
-                      <Field label="Resolution">
-                        <input value={showDraft.shortFormat.resolution} readOnly />
-                      </Field>
-                      <Field label="WPM">
-                        <input
-                          type="number"
-                          value={showDraft.shortFormat.wordsPerMinute}
-                          onChange={(event) => updateShowDraft(["shortFormat", "wordsPerMinute"], Number(event.target.value))}
-                        />
-                      </Field>
-                      <Field label="FPS">
-                        <input
-                          type="number"
-                          value={showDraft.shortFormat.fps}
-                          onChange={(event) => updateShowDraft(["shortFormat", "fps"], Number(event.target.value))}
-                        />
-                      </Field>
-                    </div>
-                  </div>
-
-                  <div className="workPanel">
-                    <div className="panelHeader">
-                      <div>
-                        <span className="eyebrow">Production</span>
-                        <h3>Defaults</h3>
-                      </div>
-                    </div>
-                    <div className="twoColumn">
-                      <Field label="Default lip-sync model">
-                        <select
-                          value={showDraft.production?.defaultLipSyncModel || "fabric"}
-                          onChange={(event) => updateShowDraft(["production", "defaultLipSyncModel"], event.target.value)}
-                        >
-                          <option value="fabric">Fabric</option>
-                          <option value="kling">Kling</option>
-                        </select>
-                      </Field>
-                      <Field label="Insert trim seconds">
-                        <input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={showDraft.production?.defaultInsertTrimSeconds || INSERT_TRIM_DEFAULT_SECONDS}
-                          onChange={(event) =>
-                            updateShowDraft(["production", "defaultInsertTrimSeconds"], Number(event.target.value))
-                          }
-                        />
-                      </Field>
-                    </div>
-                    <Toggle
-                      checked={Boolean(showDraft.production?.defaultExpressiveBodyMotion)}
-                      onChange={(checked) => updateShowDraft(["production", "defaultExpressiveBodyMotion"], checked)}
-                      label="Kling expressive body default"
-                      icon={Activity}
-                    />
-                    <div className="manualPublishNotice">
-                      These defaults apply when a new script plan is built. Existing mapped lines keep their current per-shot settings.
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="settingsGroup">
-                <div className="settingsGroupHeader">
-                  <span className="eyebrow">Automation</span>
-                  <h3>Manual / Auto Workflow</h3>
-                </div>
-                <div className="workPanel">
-                  <div className="automationPresetRow">
-                    {automationPresets.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        className="secondaryButton"
-                        onClick={() => applyAutomationPreset(preset.values)}
-                      >
-                        <WandSparkles size={15} />
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="automationStageGrid">
-                    {automationControls.map(({ key, label, phase, description, icon: Icon }) => {
-                      const enabled = Boolean(activeAutomation[key]);
-                      return (
-                        <article key={key} className={`automationStageCard ${enabled ? "auto" : "manual"}`}>
-                          <div className="automationStageTop">
-                            <div className="automationStageIcon">
-                              <Icon size={17} />
-                            </div>
-                            <div>
-                              <span>{phase}</span>
-                              <strong>{label}</strong>
-                            </div>
-                            <button
-                              type="button"
-                              className={`automationModeSwitch ${enabled ? "auto" : "manual"}`}
-                              onClick={() => updateShowDraft(["automation", key], !enabled)}
-                            >
-                              {enabled ? "Auto" : "Manual"}
-                            </button>
-                          </div>
-                          <p>{description}</p>
-                        </article>
-                      );
-                    })}
-                  </div>
-                  <div className="manualPublishNotice">
-                    Auto upload creates private YouTube drafts only. Public release and non-YouTube promotion stay manual.
-                  </div>
-                </div>
-              </section>
-
-              <section className="settingsGroup">
-                <div className="settingsGroupHeader">
-                  <span className="eyebrow">Publishing</span>
-                  <h3>YouTube & Promotion Defaults</h3>
-                </div>
-                <div className="settingsGroupGrid">
-                  <div className="workPanel">
-                    <div className="panelHeader">
-                      <div>
-                        <span className="eyebrow">YouTube</span>
-                        <h3>Publishing Defaults</h3>
-                      </div>
-                    </div>
-                    <div className="twoColumn">
-                      <Field label="Draft privacy">
-                        <input value="Private draft" readOnly />
-                      </Field>
-                      <Field label="Category">
-                        <input
-                          value={showDraft.platforms.youtube.categoryId}
-                          onChange={(event) => updateShowDraft(["platforms", "youtube", "categoryId"], event.target.value)}
-                        />
-                      </Field>
-                    </div>
-                    <Field label="Default tags">
-                      <input
-                        value={(showDraft.platforms.youtube.defaultTags || []).join(", ")}
-                        onChange={(event) =>
-                          updateShowDraft(
-                            ["platforms", "youtube", "defaultTags"],
-                            event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean)
-                          )
-                        }
-                      />
-                    </Field>
-                    <Field label="Recurring hashtags">
-                      <input
-                        value={(showDraft.creative.recurringHashtags || []).join(", ")}
-                        onChange={(event) =>
-                          updateShowDraft(
-                            ["creative", "recurringHashtags"],
-                            event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean)
-                          )
-                        }
-                      />
-                    </Field>
-                  </div>
-
-                  <div className="workPanel promotionTemplatePanel">
-                    <div className="panelHeader">
-                      <div>
-                        <span className="eyebrow">Promotion</span>
-                        <h3>Reusable Templates</h3>
-                      </div>
-                    </div>
-                    <div className="templateTokenHint">
-                      Tokens: {"{{title}}"}, {"{{hook}}"}, {"{{youtube_url}}"}, {"{{show}}"}, {"{{hashtags}}"}, {"{{cta}}"}
-                    </div>
-                    <div className="promotionTemplateGrid">
-                      {promotionTemplateFields.map((field) => (
-                        <Field key={field.key} label={field.label}>
-                          <textarea
-                            value={promotionTemplates[field.key] || ""}
-                            rows={field.rows}
-                            onChange={(event) =>
-                              updateShowDraft(["platforms", "social", "templates", field.key], event.target.value)
-                            }
-                          />
-                        </Field>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="settingsGroup">
-                <div className="settingsGroupHeader">
-                  <span className="eyebrow">Creative & Connections</span>
-                  <h3>Style Rules & Provider Status</h3>
-                </div>
-                <div className="settingsGroupGrid">
-                  <div className="workPanel">
-                    <div className="panelHeader">
-                      <div>
-                        <span className="eyebrow">Creative</span>
-                        <h3>Rules</h3>
-                      </div>
-                    </div>
-                    <Field label="Visual style">
-                      <textarea
-                        value={showDraft.creative.visualStyle}
-                        onChange={(event) => updateShowDraft(["creative", "visualStyle"], event.target.value)}
-                        rows={4}
-                      />
-                    </Field>
-                    <Field label="Thumbnail style">
-                      <textarea
-                        value={showDraft.creative.thumbnailStyle}
-                        onChange={(event) => updateShowDraft(["creative", "thumbnailStyle"], event.target.value)}
-                        rows={4}
-                      />
-                    </Field>
-                    <Field label="Default CTA">
-                      <input
-                        value={showDraft.creative.defaultCta}
-                        onChange={(event) => updateShowDraft(["creative", "defaultCta"], event.target.value)}
-                      />
-                    </Field>
-                  </div>
-
-                  <div className="workPanel">
-                    <div className="panelHeader">
-                      <div>
-                        <span className="eyebrow">Connections</span>
-                        <h3>Provider Status</h3>
-                      </div>
-                    </div>
-                    <div className="connectionStatusGrid">
-                      {integrationSetupRows.map((row) => {
-                        const configured = Boolean(integrations[row.key]);
-                        return (
-                          <article key={row.key} className={`connectionStatus ${configured ? "ready" : ""}`}>
-                            <div>
-                              <span>{row.label}</span>
-                              <p>{row.purpose}</p>
-                            </div>
-                            <div>
-                              <strong>{configured ? "connected" : "not set"}</strong>
-                              <code>{row.env}</code>
-                            </div>
-                          </article>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </section>
         )}
 
         {workspaceView && ["preview", "composite", "delivery"].includes(activeWorkflowSection.key) && (

@@ -93,9 +93,7 @@ body::before {
 .episodeCard,
 .reviewDetails,
 .deliveryPackageNode,
-.deliveryNodeCard,
-.connectionStatus,
-.automationStageCard {
+.deliveryNodeCard {
   border-color: rgba(255, 255, 255, 0.13);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
   box-shadow:
@@ -365,7 +363,6 @@ main {
 
 .panelHeader,
 .editorBand,
-.settingsGroupHeader,
 .renderCommandBar,
 .finishingHeader,
 .thumbnailReviewHeader,
@@ -1703,44 +1700,6 @@ main {
   align-items: start;
 }
 
-.settingsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 18px;
-  align-items: start;
-}
-
-.settingsStack {
-  display: grid;
-  gap: 22px;
-}
-
-.settingsGroup {
-  display: grid;
-  gap: 10px;
-}
-
-.settingsGroupHeader {
-  display: block;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-}
-
-.settingsGroupHeader .eyebrow {
-  margin-bottom: 4px;
-}
-
-.settingsGroupHeader h3 {
-  font-size: 18px;
-}
-
-.settingsGroupGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 14px;
-  align-items: start;
-}
-
 .workPanel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1946,96 +1905,6 @@ label:has(textarea:disabled) {
   background: var(--jade);
 }
 
-.automationPresetRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.automationStageGrid {
-  display: grid;
-  gap: 10px;
-}
-
-.settingsGroup .automationStageGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.automationStageCard {
-  display: grid;
-  gap: 9px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #191914;
-}
-
-.automationStageCard.auto {
-  border-color: rgba(109, 208, 165, 0.32);
-  background: rgba(109, 208, 165, 0.06);
-}
-
-.automationStageTop {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.automationStageIcon {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  color: var(--blue);
-  background: #20201b;
-}
-
-.automationStageCard.auto .automationStageIcon {
-  color: var(--jade);
-}
-
-.automationStageTop span,
-.automationStageCard p {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.automationStageTop strong {
-  display: block;
-  margin-top: 2px;
-}
-
-.automationStageCard p {
-  margin: 0;
-  line-height: 1.45;
-}
-
-.automationModeSwitch {
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  color: var(--text);
-  background: #24241f;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.automationModeSwitch.manual {
-  color: var(--text);
-  background: #24241f;
-  border-color: var(--line-strong);
-}
-
-.automationModeSwitch.auto {
-  color: var(--jade);
-  background: rgba(109, 208, 165, 0.1);
-  border-color: rgba(109, 208, 165, 0.32);
-}
-
 .automationRunbookPanel {
   margin-bottom: 14px;
 }
@@ -2091,79 +1960,6 @@ label:has(textarea:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.channelToggleGrid,
-.connectionStatusGrid {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 13px;
-}
-
-.promotionTemplatePanel {
-  grid-column: 1 / -1;
-}
-
-.templateTokenHint {
-  padding: 9px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--muted);
-  background: #181914;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.promotionTemplateGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 11px;
-}
-
-.connectionStatus {
-  min-height: 58px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.75fr);
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--muted);
-  background: #191914;
-}
-
-.connectionStatus.ready {
-  color: var(--text);
-  border-color: rgba(109, 208, 165, 0.32);
-  background: rgba(109, 208, 165, 0.06);
-}
-
-.connectionStatus strong {
-  display: block;
-  text-align: right;
-  font-size: 12px;
-}
-
-.connectionStatus span {
-  display: block;
-  color: var(--text);
-  font-weight: 800;
-}
-
-.connectionStatus p {
-  margin: 3px 0 0;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.connectionStatus code {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 11px;
-  text-align: right;
-  white-space: normal;
 }
 
 .helperText {
@@ -4420,7 +4216,6 @@ label:has(textarea:disabled) {
   font-size: 13px;
 }
 
-.settingsView,
 .approvalsView {
   max-width: 1240px;
 }
@@ -5009,9 +4804,6 @@ label:has(textarea:disabled) {
 
 @media (max-width: 1040px) {
   .studioGrid,
-  .settingsGrid,
-  .settingsGroupGrid,
-  .settingsGroup .automationStageGrid,
   .dashboardMetricGrid,
   .musicBriefGrid,
   .finishingPreviewGrid {
@@ -5055,11 +4847,6 @@ label:has(textarea:disabled) {
     justify-content: flex-start;
   }
 
-  .settingsGroupHeader {
-    align-items: start;
-    flex-direction: column;
-  }
-
   .twoColumn,
   .identityCompactRow,
   .lineAssignmentGrid,
@@ -5080,10 +4867,8 @@ label:has(textarea:disabled) {
   .draftStatusGrid,
   .handoffChecklistGrid,
   .promotionCopyGrid,
-  .promotionTemplateGrid,
   .showCardGrid,
   .episodeCardGrid,
-  .connectionStatus,
   .automationRunbookGrid,
   .launchReadinessGrid,
   .readinessColumns,
@@ -5156,9 +4941,7 @@ body {
 .showCreateTile,
 .episodeCreateTile,
 .episodeCard,
-.reviewDetails,
-.connectionStatus,
-.automationStageCard {
+.reviewDetails {
   border-color: rgba(255, 255, 255, 0.13);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
   box-shadow:
