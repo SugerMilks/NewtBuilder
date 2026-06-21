@@ -3334,6 +3334,12 @@ label:has(textarea:disabled) {
   gap: 12px;
 }
 
+.youtubeInlinePromotion {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
 .promotionPrepHeader {
   display: flex;
   align-items: center;

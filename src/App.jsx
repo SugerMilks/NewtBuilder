@@ -5270,6 +5270,42 @@ function FinalPackagePanel({
           <div className="manualPublishNotice">
             NewtBuilder uploads private drafts only. The schedule target and notes are saved here, then applied manually in YouTube Studio.
           </div>
+          <section className="youtubeInlinePromotion promotionPrepBody">
+            <div className="promotionPrepHeader">
+              <div>
+                <strong>YouTube promotion prep</strong>
+                <span>Community post and pinned comment drafts stay bundled with this private draft.</span>
+              </div>
+              <div className="buttonRow">
+                <Pill tone={promotionReady ? "good" : "neutral"}>{promotionReady ? "drafted" : "manual"}</Pill>
+                <button className="secondaryButton" type="button" onClick={generatePromotionCopy} disabled={busy}>
+                  <WandSparkles size={16} />
+                  Draft Copy
+                </button>
+              </div>
+            </div>
+            <div className="promotionCopyGrid">
+              <Field label="Community post">
+                <textarea
+                  value={youtubePromotion.communityPost}
+                  rows={5}
+                  placeholder="Draft a Community post after the episode is published."
+                  onChange={(event) => updatePromotionField("communityPost", event.target.value)}
+                />
+              </Field>
+              <Field label="Pinned comment">
+                <textarea
+                  value={youtubePromotion.pinnedComment}
+                  rows={5}
+                  placeholder="Draft the comment to pin below the uploaded episode."
+                  onChange={(event) => updatePromotionField("pinnedComment", event.target.value)}
+                />
+              </Field>
+            </div>
+            <div className="manualPublishNotice">
+              These drafts are saved with YouTube Prep and included in the export package. Posting remains manual.
+            </div>
+          </section>
         </div>
 
         <section className="deliveryNodeCard deliveryPlatformsPanel">
@@ -5347,46 +5383,6 @@ function FinalPackagePanel({
                 </article>
               );
             })}
-          </div>
-        </section>
-
-        <section className="deliveryNodeCard youtubePromotionPanel">
-          <div className="deliveryCardHeader">
-            <div>
-              <strong>Promotion Prep</strong>
-              <span>Draft YouTube-only community copy for manual posting after the private draft is reviewed.</span>
-            </div>
-            <Pill tone={promotionReady ? "good" : "neutral"}>{promotionReady ? "drafted" : "YouTube only"}</Pill>
-          </div>
-          <div className="promotionPrepBody">
-            <div className="promotionPrepHeader">
-              <span>Prepare copy for a manual YouTube Community post and pinned comment.</span>
-              <button className="secondaryButton" type="button" onClick={generatePromotionCopy} disabled={busy}>
-                <WandSparkles size={16} />
-                Draft Copy
-              </button>
-            </div>
-            <div className="promotionCopyGrid">
-              <Field label="Community post">
-                <textarea
-                  value={youtubePromotion.communityPost}
-                  rows={5}
-                  placeholder="Draft a Community post after the episode is published."
-                  onChange={(event) => updatePromotionField("communityPost", event.target.value)}
-                />
-              </Field>
-              <Field label="Pinned comment">
-                <textarea
-                  value={youtubePromotion.pinnedComment}
-                  rows={5}
-                  placeholder="Draft the comment to pin below the uploaded episode."
-                  onChange={(event) => updatePromotionField("pinnedComment", event.target.value)}
-                />
-              </Field>
-            </div>
-            <div className="manualPublishNotice">
-              These drafts are saved with YouTube Prep and included in the export package. Posting remains manual.
-            </div>
           </div>
         </section>
 
