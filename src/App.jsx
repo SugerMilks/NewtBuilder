@@ -3285,14 +3285,11 @@ export default function App() {
                 previewOutput={previewOutput}
                 finalOutput={baseFinalOutput}
                 selectedFormat={selectedFormat}
-                readiness={renderReadiness}
-                approvals={approvals}
                 hasProductionMap={productionMap.length > 0}
                 canBuildPreview={previewBuildReady}
                 canRenderFinal={finalRenderReady}
                 busy={busy}
                 busyAction={busyAction}
-                onSetApproval={setApproval}
                 onRebuildAudio={rebuildAudioMix}
                 onBuildPreview={runPipeline}
                 onRenderFinal={renderFinalEpisode}
@@ -3552,14 +3549,11 @@ function PreviewWorkflowPanel({
   previewOutput,
   finalOutput,
   selectedFormat,
-  readiness,
-  approvals = [],
   hasProductionMap,
   canBuildPreview,
   canRenderFinal,
   busy,
   busyAction,
-  onSetApproval,
   onRebuildAudio,
   onBuildPreview,
   onRenderFinal
@@ -3569,15 +3563,6 @@ function PreviewWorkflowPanel({
   const renderBusy = busyAction === "render-final";
   const activeVideo = renderBusy ? null : finalOutput || previewOutput;
   const aspect = cssAspectRatio(selectedFormat.aspectRatio);
-  const steps = [
-    { label: "Storyboard", done: hasProductionMap },
-    { label: "Audio", done: Boolean(audioOutput?.localUrl) },
-    { label: "Preview", done: Boolean(previewOutput?.localUrl) },
-    { label: "Final", done: Boolean(finalOutput?.localUrl) }
-  ];
-  const previewGates = ["script_plan", "voice_audio", "render_preview"]
-    .map((id) => approvals.find((gate) => gate.id === id))
-    .filter(Boolean);
 
   return (
     <section className="previewWorkflowCanvas">
@@ -3591,57 +3576,15 @@ function PreviewWorkflowPanel({
             {finalOutput ? "final ready" : previewOutput ? "preview ready" : "waiting"}
           </Pill>
         </div>
-        <div className="previewStepRail">
-          {steps.map((step) => (
-            <span key={step.label} className={step.done ? "done" : ""}>
-              {step.done ? <Check size={12} /> : <CircleAlert size={12} />}
-              {step.label}
-            </span>
-          ))}
-        </div>
-        {previewGates.length ? (
-          <div className="previewApprovalStrip">
-            {previewGates.map((gate) => {
-              const approved = gate.status === "approved" || gate.status === "auto";
-              return (
-                <article key={gate.id} className={`previewApprovalChip ${approved ? "approved" : gate.status === "blocked" ? "blocked" : ""}`}>
-                  <div>
-                    <strong>{gate.title}</strong>
-                    <Pill tone={statusTone(gate.status)}>{gate.status}</Pill>
-                  </div>
-                  <div className="previewApprovalActions">
-                    <button
-                      type="button"
-                      className="quietButton iconOnly"
-                      onClick={() => onSetApproval?.(gate.id, "approved")}
-                      disabled={busy || approved}
-                      title={approved ? `${gate.title} approved` : gate.actionLabel}
-                      aria-label={approved ? `${gate.title} approved` : gate.actionLabel}
-                    >
-                      <Check size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      className="quietButton iconOnly"
-                      onClick={() => onSetApproval?.(gate.id, "blocked")}
-                      disabled={busy}
-                      title={`Hold ${gate.title}`}
-                      aria-label={`Hold ${gate.title}`}
-                    >
-                      <CircleAlert size={15} />
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : null}
+        <p className="previewCommandHint">
+          Build a quick local preview from the current storyboard and ElevenLabs dialogue, then render the final episode when it looks right.
+        </p>
         <div className="previewCommandActions">
           <button
             className="primaryButton"
             onClick={onBuildPreview}
             disabled={!canBuildPreview || busy}
-            title={canBuildPreview ? "Create or refresh the local preview" : readiness.setupReady ? "Approve Script Plan and Voice & Audio first" : "Finish the preview setup checks first"}
+            title={canBuildPreview ? "Create or refresh the local preview" : "Finish the storyboard and approval checks first"}
           >
             {buildBusy ? <RefreshCw className="spin" size={17} /> : <Play size={17} />}
             Build Preview

@@ -2673,6 +2673,7 @@ label:has(textarea:disabled) {
 .previewCommandNode {
   grid-area: commands;
   display: grid;
+  align-content: start;
   gap: 16px;
   padding: 16px;
 }
@@ -2683,77 +2684,11 @@ label:has(textarea:disabled) {
   margin-bottom: 0;
 }
 
-.previewStepRail {
-  display: grid;
-  gap: 8px;
-}
-
-.previewStepRail span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 999px;
+.previewCommandHint {
+  margin: 0;
   color: var(--muted);
-  background: rgba(0, 0, 0, 0.16);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.previewStepRail span.done {
-  color: #d8ffed;
-  border-color: rgba(109, 208, 165, 0.30);
-  background: rgba(109, 208, 165, 0.12);
-}
-
-.previewApprovalStrip {
-  display: grid;
-  gap: 8px;
-}
-
-.previewApprovalChip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  padding: 8px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.16);
-}
-
-.previewApprovalChip.approved {
-  border-color: rgba(109, 208, 165, 0.30);
-  background: rgba(109, 208, 165, 0.10);
-}
-
-.previewApprovalChip.blocked {
-  border-color: rgba(255, 107, 125, 0.34);
-  background: rgba(255, 107, 125, 0.08);
-}
-
-.previewApprovalChip > div:first-child {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.previewApprovalChip strong {
-  overflow: hidden;
-  color: var(--text);
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.previewApprovalActions {
-  display: flex;
-  gap: 5px;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .previewCommandActions {
