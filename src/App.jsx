@@ -2310,12 +2310,7 @@ export default function App() {
   const previewReady = Boolean(previewOutput?.localUrl);
   const renderReady = Boolean(baseFinalOutput?.localUrl);
   const compositeReady = Boolean(finishedMasterOutput?.localUrl);
-  const deliveryAccessible = Boolean(
-    compositeReady ||
-      thumbnailOutputs.length ||
-      packageOutputs.length ||
-      youtubeUploadOutputs.length
-  );
+  const deliveryAccessible = Boolean(compositeReady);
   const deliveryReady = Boolean(deliveryAccessible && (finalOutput?.localUrl || thumbnailOutputs.length));
   const workflowState = workflowSections.map((section) => {
     const state = {
