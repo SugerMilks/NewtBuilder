@@ -1932,6 +1932,27 @@ export default function App() {
     }
   }
 
+  async function uploadCharacterHeadshot(character, files) {
+    const file = files?.[0];
+    if (!file || !activeShow || !character?.id) return;
+    const fd = new FormData();
+    fd.append("headshot", file);
+    setBusy(true);
+    try {
+      const show = await request(`/api/shows/${activeShow.id}/characters/${character.id}/headshot`, {
+        method: "POST",
+        body: fd
+      });
+      setShows((prev) => [show, ...prev.filter((item) => item.id !== show.id)]);
+      setShowDraft(structuredClone(show));
+      setStatus(`Headshot saved for ${character.name || "character"}.`);
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function deleteAsset(assetId) {
     if (!assetId || !activeEpisode) return;
     setBusy(true);
@@ -2203,7 +2224,8 @@ export default function App() {
           name: "New Character",
           role: "main",
           voiceId: "",
-          visualNotes: ""
+          visualNotes: "",
+          headshot: null
         }
       ]
     }));
@@ -2605,6 +2627,24 @@ export default function App() {
                     <div className="characterList">
                       {(showDraft.characters || []).map((character, index) => (
                         <article className="characterRow" key={character.id || index}>
+                          <label className="characterHeadshotDrop">
+                            {character.headshot?.localUrl ? (
+                              <img src={character.headshot.localUrl} alt={`${character.name || "Character"} headshot`} />
+                            ) : (
+                              <span>
+                                <Image size={17} />
+                                Headshot
+                              </span>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => {
+                                uploadCharacterHeadshot(character, event.target.files);
+                                event.target.value = "";
+                              }}
+                            />
+                          </label>
                           <label className="field compactCharacterField">
                             <span>Name</span>
                             <input

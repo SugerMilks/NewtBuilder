@@ -282,6 +282,53 @@ app.patch("/api/shows/:id", async (req, res) => {
   res.json(updated);
 });
 
+app.post("/api/shows/:id/characters/:characterId/headshot", upload.single("headshot"), async (req, res) => {
+  const shows = await readShows();
+  const current = shows.find((show) => show.id === req.params.id);
+  if (!current) {
+    await deleteStoredUpload(req.file?.filename);
+    return res.status(404).json({ error: "Show not found." });
+  }
+  if (!req.file) {
+    return res.status(400).json({ error: "Choose a character headshot image." });
+  }
+
+  const characterId = cleanId(req.params.characterId);
+  const character = (current.characters || []).find((item) => item.id === characterId);
+  if (!character) {
+    await deleteStoredUpload(req.file.filename);
+    return res.status(404).json({ error: "Character not found." });
+  }
+
+  const previousHeadshot = normalizeCharacterHeadshot(character.headshot);
+  const headshot = {
+    storedFileName: req.file.filename,
+    fileName: req.file.originalname,
+    mimeType: req.file.mimetype || "image/png",
+    localUrl: `/uploads/${req.file.filename}`,
+    uploadedAt: new Date().toISOString()
+  };
+
+  const updated = normalizeShow({
+    ...current,
+    characters: (current.characters || []).map((item) =>
+      item.id === characterId
+        ? {
+            ...item,
+            headshot,
+            visualNotes: item.visualNotes || `Headshot reference: ${req.file.originalname}`
+          }
+        : item
+    ),
+    updatedAt: new Date().toISOString()
+  });
+  await writeShows([updated, ...shows.filter((show) => show.id !== updated.id)]);
+  if (previousHeadshot?.storedFileName) {
+    await deleteStoredUpload(previousHeadshot.storedFileName);
+  }
+  res.json(updated);
+});
+
 app.delete("/api/shows/:id", async (req, res) => {
   const shows = await readShows();
   const current = shows.find((show) => show.id === req.params.id);
@@ -295,6 +342,9 @@ app.delete("/api/shows/:id", async (req, res) => {
     for (const asset of episode.assets || []) {
       await deleteStoredUpload(asset.storedFileName);
     }
+  }
+  for (const character of current.characters || []) {
+    await deleteStoredUpload(character.headshot?.storedFileName);
   }
 
   const nextShows = shows.filter((show) => show.id !== current.id);
@@ -1912,7 +1962,8 @@ function normalizeShow(show) {
           name: String(character.name || "Character").trim(),
           role: String(character.role || "").trim(),
           voiceId: String(character.voiceId || "").trim(),
-          visualNotes: String(character.visualNotes || "").trim()
+          visualNotes: String(character.visualNotes || "").trim(),
+          headshot: normalizeCharacterHeadshot(character.headshot)
         }))
       : [
           {
@@ -1920,9 +1971,21 @@ function normalizeShow(show) {
             name: "Lead",
             role: "Main character",
             voiceId: "",
-            visualNotes: "Primary face for recurring episodes"
+            visualNotes: "Primary face for recurring episodes",
+            headshot: null
           }
         ]
+  };
+}
+
+function normalizeCharacterHeadshot(headshot) {
+  if (!headshot || typeof headshot !== "object") return null;
+  return {
+    storedFileName: String(headshot.storedFileName || "").trim(),
+    fileName: String(headshot.fileName || "").trim(),
+    mimeType: String(headshot.mimeType || "image/png").trim(),
+    localUrl: String(headshot.localUrl || "").trim(),
+    uploadedAt: String(headshot.uploadedAt || "")
   };
 }
 
