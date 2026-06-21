@@ -804,17 +804,26 @@ function AssetNodeCanvas({ children, connections = {}, onConnectNode, onFocusNod
       </article>
       {menu ? (
         <div className="assetContextMenu" style={{ left: menu.x, top: menu.y }} onClick={(event) => event.stopPropagation()}>
-          <div className="assetContextMenuTitle">Link to INPUT</div>
+          <div className="assetContextMenuTitle">Node selector</div>
           <button type="button" className={normalizedConnections.character ? "connected" : ""} onClick={() => selectNode("character", "character-node")}>
-            <span>Character node</span>
+            <span>
+              Character node
+              <small>{normalizedConnections.character ? "Linked to INPUT" : "Select and link"}</small>
+            </span>
             {normalizedConnections.character ? <Check size={14} /> : null}
           </button>
           <button type="button" className={normalizedConnections.visual ? "connected" : ""} onClick={() => selectNode("visual", "visual-frame-node")}>
-            <span>Visual Frame node</span>
+            <span>
+              Visual Frame node
+              <small>{normalizedConnections.visual ? "Linked to INPUT" : "Select and link"}</small>
+            </span>
             {normalizedConnections.visual ? <Check size={14} /> : null}
           </button>
           <button type="button" className={normalizedConnections.insert ? "connected" : ""} onClick={() => selectNode("insert", "insert-frame-node")}>
-            <span>Insert Frame node</span>
+            <span>
+              Insert Frame node
+              <small>{normalizedConnections.insert ? "Linked to INPUT" : "Optional link"}</small>
+            </span>
             {normalizedConnections.insert ? <Check size={14} /> : null}
           </button>
         </div>

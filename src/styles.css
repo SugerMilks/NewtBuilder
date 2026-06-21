@@ -902,6 +902,19 @@ main {
   cursor: pointer;
 }
 
+.assetContextMenu button span {
+  display: grid;
+  gap: 3px;
+}
+
+.assetContextMenu button small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .assetContextMenu button:hover {
   background: rgba(255, 255, 255, 0.09);
 }
