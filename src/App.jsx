@@ -2462,8 +2462,14 @@ export default function App() {
   const planBuilt = Boolean(productionMap.length);
   const previewReady = Boolean(previewOutput?.localUrl);
   const renderReady = Boolean(baseFinalOutput?.localUrl);
-  const compositeReady = Boolean(finishedMasterOutput?.localUrl || renderReady);
-  const deliveryReady = Boolean(finalOutput?.localUrl || thumbnailOutputs.length);
+  const compositeReady = Boolean(finishedMasterOutput?.localUrl);
+  const deliveryAccessible = Boolean(
+    compositeReady ||
+      thumbnailOutputs.length ||
+      packageOutputs.length ||
+      youtubeUploadOutputs.length
+  );
+  const deliveryReady = Boolean(deliveryAccessible && (finalOutput?.localUrl || thumbnailOutputs.length));
   const workflowState = workflowSections.map((section) => {
     const state = {
       setup: { enabled: true, complete: setupReady, unlockHint: "creating a project" },
@@ -2472,7 +2478,7 @@ export default function App() {
       storyboard: { enabled: planBuilt, complete: planBuilt, unlockHint: "Script Build Plan finishes" },
       preview: { enabled: planBuilt, complete: previewReady, unlockHint: "Script Build Plan finishes" },
       composite: { enabled: renderReady, complete: compositeReady, unlockHint: "Preview renders final video" },
-      delivery: { enabled: compositeReady, complete: deliveryReady, unlockHint: "Composite has a final render" }
+      delivery: { enabled: deliveryAccessible, complete: deliveryReady, unlockHint: "Composite Final Render finishes" }
     }[section.key];
     return { ...section, ...state };
   });
