@@ -2813,8 +2813,56 @@ function bestAssetForProductionLine({ assets = [], character, speaker, shotRole,
   );
   const speakerMatched = roleAssets.find((asset) => keyForMatch(asset.fileName).includes(speakerType));
   const speakingTagged = roleAssets.find((asset) => assetSpeakingRoles(asset).includes(speakerType));
+  const castProfileMatched = bestAssetByCastProfile({
+    roleAssets,
+    speaker,
+    character
+  });
   const prefixed = roleAssets.find((asset) => fileStartsWithShotPrefix(asset.fileName, shotRole));
-  return (speakingTagged || speakerMatched || nameMatched || prefixed || roleAssets[0] || imageAssets[0])?.id || "";
+  return (speakingTagged || speakerMatched || nameMatched || castProfileMatched || prefixed || roleAssets[0] || imageAssets[0])?.id || "";
+}
+
+function bestAssetByCastProfile({ roleAssets = [], speaker = "", character = null }) {
+  const tokens = castProfileMatchTokens({ speaker, character });
+  if (!tokens.length) return null;
+  const scored = roleAssets
+    .map((asset) => ({ asset, score: assetTokenMatchScore(asset, tokens) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score);
+  return scored[0]?.asset || null;
+}
+
+function castProfileMatchTokens({ speaker = "", character = null }) {
+  return uniqueStrings([
+    ...searchTokensFromText(speaker),
+    ...searchTokensFromText(character?.name),
+    ...searchTokensFromText(character?.role),
+    ...searchTokensFromText(character?.visualNotes),
+    ...searchTokensFromText(character?.headshot?.fileName)
+  ]).slice(0, 18);
+}
+
+function assetTokenMatchScore(asset, tokens = []) {
+  const assetTokens = new Set(
+    searchTokensFromText([
+      asset?.fileName,
+      asset?.metadata?.speakingTag,
+      asset?.metadata?.characterTags,
+      asset?.metadata?.prompt,
+      asset?.metadata?.notes
+    ].filter(Boolean).join(" "))
+  );
+  const assetKey = keyForMatch([
+    asset?.fileName,
+    asset?.metadata?.speakingTag,
+    asset?.metadata?.characterTags,
+    asset?.metadata?.prompt,
+    asset?.metadata?.notes
+  ].filter(Boolean).join(" "));
+  return tokens.reduce((score, token) => {
+    if (assetTokens.has(token)) return score + 4;
+    return assetKey.includes(token) ? score + 1 : score;
+  }, 0);
 }
 
 function baseCastRolesForShow(show) {
@@ -3048,6 +3096,36 @@ function estimateInsertSeconds(text) {
 
 function keyForMatch(value) {
   return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+const assetMatchStopWords = new Set([
+  "and",
+  "the",
+  "with",
+  "for",
+  "shot",
+  "image",
+  "frame",
+  "headshot",
+  "character",
+  "visual",
+  "main",
+  "role",
+  "guest",
+  "supporting",
+  "talking",
+  "speaking"
+]);
+
+function searchTokensFromText(value) {
+  return uniqueStrings(
+    String(value || "")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3 && !/^\d+$/.test(token) && !assetMatchStopWords.has(token))
+  );
 }
 
 function hashSegment(value) {
