@@ -897,6 +897,25 @@ main {
 }
 
 /* Storyboard canvas */
+.storyboardCanvasPanel {
+  display: grid;
+  gap: 14px;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(216, 198, 255, 0.13), transparent 32%),
+    radial-gradient(circle at 88% 76%, rgba(109, 208, 165, 0.10), transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.032));
+  background-size: auto, auto, 54px 54px, 54px 54px, auto;
+}
+
+.storyboardPanelHeader {
+  padding: 4px 4px 0;
+}
+
 .productionStoryboardGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

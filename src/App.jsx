@@ -6040,7 +6040,6 @@ function ProductionMapPanel({
   busy
 }) {
   const hasLines = productionMap.length > 0;
-  const [isOpen, setIsOpen] = useState(true);
   const [selectedLineIds, setSelectedLineIds] = useState(() => new Set());
   const [dragLineId, setDragLineId] = useState("");
   const [dropTarget, setDropTarget] = useState(null);
@@ -6237,20 +6236,12 @@ function ProductionMapPanel({
   }
 
   return (
-    <section className={`workPanel productionMapPanel collapsiblePanel ${isOpen ? "open" : "closed"}`}>
-      <div className="panelHeader collapsibleHeader">
-        <button
-          type="button"
-          className="collapseTitle"
-          onClick={() => setIsOpen((value) => !value)}
-          aria-expanded={isOpen}
-        >
-          <ChevronRight size={18} className={isOpen ? "open" : ""} />
-          <div>
-            <span className="eyebrow">Storyboard</span>
-            <h3>Frames</h3>
-          </div>
-        </button>
+    <section className="workPanel productionMapPanel storyboardCanvasPanel">
+      <div className="panelHeader storyboardPanelHeader">
+        <div>
+          <span className="eyebrow">Storyboard</span>
+          <h3>Frames</h3>
+        </div>
         <div className="buttonRow">
           {selectedLineIds.size >= 2 ? (
             <button className="secondaryButton" type="button" onClick={() => onGroupLines(selectedIds)}>
@@ -6271,7 +6262,7 @@ function ProductionMapPanel({
         </div>
       </div>
 
-      {isOpen && (hasLines ? (
+      {hasLines ? (
         <>
           {groupBlocks.some((block) => block.type === "group") ? (
             <div className="storyboardGroupStrip">
@@ -6351,7 +6342,7 @@ function ProductionMapPanel({
         </>
       ) : (
         <div className="emptyState">Build a plan from a dialogue script to create line assignments.</div>
-      ))}
+      )}
     </section>
   );
 }
