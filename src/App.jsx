@@ -3545,6 +3545,7 @@ function PreviewWorkflowPanel({
   const audioBusy = busyAction === "rebuild-audio";
   const renderBusy = busyAction === "render-final";
   const activeVideo = renderBusy ? null : finalOutput || previewOutput;
+  const previewBuilt = Boolean(previewOutput?.localUrl || finalOutput?.localUrl);
   const aspect = cssAspectRatio(selectedFormat.aspectRatio);
 
   return (
@@ -3560,7 +3561,9 @@ function PreviewWorkflowPanel({
           </Pill>
         </div>
         <p className="previewCommandHint">
-          Build a quick local preview from the current storyboard and ElevenLabs dialogue, then render the final episode when it looks right.
+          {previewBuilt
+            ? "Review the generated preview with the current ElevenLabs dialogue, refresh audio if needed, then render the final episode."
+            : "Build a quick local preview from the current storyboard and ElevenLabs dialogue."}
         </p>
         <div className="previewCommandActions">
           <button
@@ -3572,19 +3575,23 @@ function PreviewWorkflowPanel({
             {buildBusy ? <RefreshCw className="spin" size={17} /> : <Play size={17} />}
             Build Preview
           </button>
-          <button className="secondaryButton" onClick={onRebuildAudio} disabled={!hasProductionMap || busy}>
-            {audioBusy ? <RefreshCw className="spin" size={16} /> : <RefreshCw size={16} />}
-            Rebuild Audio
-          </button>
-          <button
-            className="secondaryButton"
-            onClick={onRenderFinal}
-            disabled={!canRenderFinal || busy}
-            title={canRenderFinal ? "Create final local render" : "Build and approve the preview before rendering final video"}
-          >
-            {renderBusy ? <RefreshCw className="spin" size={16} /> : <Film size={16} />}
-            Render
-          </button>
+          {previewBuilt ? (
+            <>
+              <button className="secondaryButton" onClick={onRebuildAudio} disabled={!hasProductionMap || busy}>
+                {audioBusy ? <RefreshCw className="spin" size={16} /> : <RefreshCw size={16} />}
+                Rebuild Audio
+              </button>
+              <button
+                className="secondaryButton"
+                onClick={onRenderFinal}
+                disabled={!canRenderFinal || busy}
+                title={canRenderFinal ? "Create final local render" : "Build and approve the preview before rendering final video"}
+              >
+                {renderBusy ? <RefreshCw className="spin" size={16} /> : <Film size={16} />}
+                Render
+              </button>
+            </>
+          ) : null}
         </div>
       </article>
 
