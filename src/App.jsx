@@ -3216,6 +3216,8 @@ function FinalReviewPanel({
     setThumbnailBrief(thumbnailBriefDefaults);
   }, [thumbnailBriefDefaults]);
 
+  const selectedThumbnailFormats = normalizeThumbnailFormats(thumbnailBrief.formats, selectedFormat.aspectRatio);
+
   const updateThumbnailBrief = (key, value) => {
     setThumbnailBrief((prev) => ({ ...prev, [key]: value }));
   };
@@ -3269,19 +3271,21 @@ function FinalReviewPanel({
           <div className="thumbnailReviewHeader">
             <div>
               <span className="eyebrow">Image 2</span>
-              <strong>{normalizeThumbnailFormats(thumbnailBrief.formats, selectedFormat.aspectRatio).length} format output</strong>
+              <strong>
+                {selectedThumbnailFormats.length} selected format{selectedThumbnailFormats.length === 1 ? "" : "s"}
+              </strong>
             </div>
             <button className="secondaryButton" onClick={() => onGenerateThumbnails(thumbnailBrief)} disabled={!reviewVideo || busy}>
               {thumbnailBusy ? <RefreshCw className="spin" size={16} /> : <Image size={16} />}
-              Generate AI Thumbnails
+              Generate Selected Formats
             </button>
           </div>
           <div className="deliveryFormatSelector">
             {thumbnailFormatOptions.map((option) => (
-              <label key={option.aspectRatio} className={`formatCheck ${normalizeThumbnailFormats(thumbnailBrief.formats, selectedFormat.aspectRatio).includes(option.aspectRatio) ? "selected" : ""}`}>
+              <label key={option.aspectRatio} className={`formatCheck ${selectedThumbnailFormats.includes(option.aspectRatio) ? "selected" : ""}`}>
                 <input
                   type="checkbox"
-                  checked={normalizeThumbnailFormats(thumbnailBrief.formats, selectedFormat.aspectRatio).includes(option.aspectRatio)}
+                  checked={selectedThumbnailFormats.includes(option.aspectRatio)}
                   onChange={(event) => toggleThumbnailFormat(option.aspectRatio, event.target.checked)}
                 />
                 <span>{option.label}</span>
@@ -3340,7 +3344,7 @@ function FinalReviewPanel({
           ) : null}
           {thumbnailOutputs.length ? (
             <div className="thumbnailOutputGrid">
-              {thumbnailOutputs.slice(0, 6).map((thumb) => {
+              {thumbnailOutputs.map((thumb) => {
                 const thumbAspect = thumb.aspectRatio || selectedFormat.aspectRatio || "16:9";
                 return (
                   <button
