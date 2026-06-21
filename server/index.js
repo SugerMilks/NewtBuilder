@@ -2289,10 +2289,16 @@ async function cloneEpisodeAssetsForNewEpisode(templateEpisode) {
 function inheritedEpisodeDrafts({ templateEpisode, show }) {
   const base = emptyDrafts(show);
   const template = templateEpisode?.drafts || {};
+  const templateWorkflow = normalizeWorkflowDraft(templateEpisode, base.workflow);
   const youtube = template.youtube || {};
   const delivery = template.delivery || {};
   return {
     ...base,
+    workflow: {
+      ...base.workflow,
+      setupApproved: Boolean(templateWorkflow.setupApproved),
+      setupApprovedAt: templateWorkflow.setupApproved ? new Date().toISOString() : ""
+    },
     assetNodeConnections: normalizeAssetNodeConnections(template.assetNodeConnections),
     youtube: {
       ...base.youtube,
