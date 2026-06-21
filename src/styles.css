@@ -1080,8 +1080,7 @@ main {
   background: rgba(255, 255, 255, 0.055);
 }
 
-.storyboardGroupChip .open,
-.collapseTitle .open {
+.storyboardGroupChip .open {
   transform: rotate(90deg);
 }
 
@@ -1714,46 +1713,6 @@ main {
   margin-bottom: 18px;
 }
 
-.collapsibleHeader {
-  margin-bottom: 0;
-}
-
-.collapsiblePanel.open .collapsibleHeader {
-  margin-bottom: 18px;
-}
-
-.collapsiblePanel.closed {
-  min-height: 0;
-}
-
-.collapseTitle {
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.collapseTitle svg {
-  flex: 0 0 auto;
-  color: var(--muted);
-  transition: transform 160ms ease, color 160ms ease;
-}
-
-.collapseTitle:hover svg,
-.collapseTitle svg.open {
-  color: var(--jade);
-}
-
-.collapseTitle svg.open {
-  transform: rotate(90deg);
-}
-
 .editorBand {
   padding: 20px 0;
 }
@@ -2163,8 +2122,21 @@ label:has(textarea:disabled) {
   margin: -8px 0 14px;
 }
 
-.showIdentityPanel {
+.setupWorkflowPanel {
+  display: grid;
+  gap: 14px;
   grid-column: span 2;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(216, 198, 255, 0.13), transparent 32%),
+    radial-gradient(circle at 88% 76%, rgba(109, 208, 165, 0.09), transparent 34%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.032));
+}
+
+.setupWorkflowHeader {
+  padding: 4px 4px 0;
 }
 
 .identityCompactRow {
@@ -5000,7 +4972,7 @@ label:has(textarea:disabled) {
     grid-template-columns: 1fr;
   }
 
-  .showIdentityPanel {
+  .setupWorkflowPanel {
     grid-column: auto;
   }
 

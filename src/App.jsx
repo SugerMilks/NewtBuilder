@@ -2546,18 +2546,17 @@ export default function App() {
         {workspaceView && ["setup", "assets", "script", "storyboard"].includes(activeWorkflowSection.key) && (
           <div className="studioGrid">
             {showDraft && activeWorkflowSection.key === "setup" && (
-              <CollapsiblePanel
-                className="showIdentityPanel"
-                eyebrow="Setup"
-                title="Show & Episode"
-                defaultOpen
-                action={
+              <section className="workPanel setupWorkflowPanel">
+                <div className="panelHeader setupWorkflowHeader">
+                  <div>
+                    <span className="eyebrow">Setup</span>
+                    <h3>Show & Episode</h3>
+                  </div>
                   <button className="secondaryButton" onClick={saveShow} disabled={busy}>
                     <Save size={17} />
                     Save Setup
                   </button>
-                }
-              >
+                </div>
                 <div className="setupEpisodeSwitcher">
                   <Field label="Current episode">
                     <select
@@ -2641,7 +2640,7 @@ export default function App() {
                     Create First Episode
                   </button>
                 ) : null}
-              </CollapsiblePanel>
+              </section>
             )}
 
             {showDraft && activeWorkflowSection.key === "assets" && (
@@ -3322,31 +3321,6 @@ function Metric({ icon: Icon, label, value }) {
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
-  );
-}
-
-function CollapsiblePanel({ className = "", eyebrow, title, action = null, children, defaultOpen = false }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  return (
-    <section className={`workPanel collapsiblePanel ${isOpen ? "open" : "closed"} ${className}`}>
-      <div className="panelHeader collapsibleHeader">
-        <button
-          type="button"
-          className="collapseTitle"
-          onClick={() => setIsOpen((value) => !value)}
-          aria-expanded={isOpen}
-        >
-          <ChevronRight size={18} className={isOpen ? "open" : ""} />
-          <div>
-            <span className="eyebrow">{eyebrow}</span>
-            <h3>{title}</h3>
-          </div>
-        </button>
-        {action}
-      </div>
-      {isOpen && <div className="collapsibleBody">{children}</div>}
-    </section>
   );
 }
 
