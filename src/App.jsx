@@ -329,10 +329,8 @@ function reindexProductionMap(lines = []) {
 function buildRenderReadiness({
   productionMap = [],
   assets = [],
-  approvals = [],
   audioOutput,
   previewOutput,
-  renderReviewApproved,
   selectedFormat = {},
   plan = {}
 }) {
@@ -350,11 +348,6 @@ function buildRenderReadiness({
   const missingInsertTrims = insertLines.filter((line) => {
     if (!line.videoTake?.localUrl && !line.videoTake?.proxyLocalUrl) return false;
     return Number(line.videoOutSeconds || 0) <= Number(line.videoInSeconds || 0);
-  });
-  const requiredApprovalIds = ["script_plan", "voice_audio"];
-  const pendingPreRenderApprovals = requiredApprovalIds.filter((id) => {
-    const gate = approvals.find((item) => item.id === id);
-    return !gate || (gate.status !== "approved" && gate.status !== "auto");
   });
   const estimate = Number(plan.estimatedSeconds || 0);
   const runtimeKnown = estimate > 0;
@@ -397,14 +390,6 @@ function buildRenderReadiness({
         : "No insert lines in this script"
     ),
     readinessCheck(
-      "approvals",
-      "Required approvals",
-      pendingPreRenderApprovals.length === 0,
-      pendingPreRenderApprovals.length
-        ? `${pendingPreRenderApprovals.length} required approvals still need attention`
-        : "Script Plan and Voice & Audio are approved"
-    ),
-    readinessCheck(
       "runtime",
       "Length estimate",
       runtimeKnown,
@@ -432,14 +417,6 @@ function buildRenderReadiness({
       "warning",
       "review"
     ),
-    readinessCheck(
-      "render_review",
-      "Preview approval",
-      Boolean(renderReviewApproved),
-      renderReviewApproved ? "Episode Render gate is approved" : "Approve Episode Render after watching the preview",
-      "warning",
-      "review"
-    )
   ];
 
   const setupReady = setupChecks.every((check) => check.status !== "fail");
@@ -1773,24 +1750,6 @@ export default function App() {
     }
   }
 
-  async function setApproval(gateId, nextStatus = "approved") {
-    if (!activeEpisode) return;
-    setBusy(true);
-    try {
-      const episode = await request(`/api/episodes/${activeEpisode.id}/approvals/${gateId}`, {
-        method: "POST",
-        body: JSON.stringify({ status: nextStatus })
-      });
-      setEpisodes((prev) => [episode, ...prev.filter((item) => item.id !== episode.id)]);
-      setEpisodeDraft(structuredClone(episode));
-      setStatus(`${gateId.replace("_", " ")} updated.`);
-    } catch (error) {
-      setStatus(error.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handleScriptFile(file) {
     if (!file) return;
     const fd = new FormData();
@@ -2204,12 +2163,6 @@ export default function App() {
   const youtubeAuth = health?.youtube || {};
   const selectedFormat = activeShow?.shortFormat || episodeDraft?.format || {};
   const plan = episodeDraft?.plan || activeEpisode?.plan || {};
-  const approvals = activeEpisode?.approvals || [];
-  const preRenderApprovalIds = new Set(["script_plan", "voice_audio"]);
-  const preRenderGates = approvals.filter((gate) => preRenderApprovalIds.has(gate.id));
-  const preRenderApprovalsReady =
-    preRenderGates.length === preRenderApprovalIds.size &&
-    preRenderGates.every((gate) => gate.status === "approved" || gate.status === "auto");
   const drafts = episodeDraft?.id === activeEpisode?.id ? episodeDraft?.drafts || {} : activeEpisode?.drafts || {};
   const assetNodeConnections = normalizeAssetNodeConnections(drafts.assetNodeConnections);
   const coreAssetNodesConnected = Boolean(assetNodeConnections.character && assetNodeConnections.visual);
@@ -2241,19 +2194,15 @@ export default function App() {
   const thumbnailOutputs = visibleThumbnailCandidates(
     (activeEpisode?.outputs || []).filter((output) => output.type === "thumbnail_image")
   );
-  const renderReviewGate = approvals.find((gate) => gate.id === "render_preview");
-  const renderReviewApproved = !renderReviewGate || renderReviewGate.status === "approved" || renderReviewGate.status === "auto";
   const renderReadiness = buildRenderReadiness({
     productionMap,
     assets: episodeDraft?.assets || activeEpisode?.assets || [],
-    approvals,
     audioOutput,
     previewOutput,
-    renderReviewApproved,
     selectedFormat,
     plan
   });
-  const previewBuildReady = Boolean(activeEpisode && preRenderApprovalsReady && renderReadiness.setupReady);
+  const previewBuildReady = Boolean(activeEpisode && renderReadiness.setupReady);
   const finalRenderReady = Boolean(activeEpisode && renderReadiness.finalReady);
 
   const assetCounts = useMemo(() => {
@@ -3149,7 +3098,7 @@ function PreviewWorkflowPanel({
             className="primaryButton"
             onClick={onBuildPreview}
             disabled={!canBuildPreview || busy}
-            title={canBuildPreview ? "Create or refresh the local preview" : "Finish the storyboard and approval checks first"}
+            title={canBuildPreview ? "Create or refresh the local preview" : "Finish the storyboard readiness checks first"}
           >
             {buildBusy ? <RefreshCw className="spin" size={17} /> : <Play size={17} />}
             Build Preview
@@ -3343,7 +3292,7 @@ function FinalReviewPanel({
             className="secondaryButton"
             onClick={onBuildPreview}
             disabled={!canBuildPreview || busy}
-            title={canBuildPreview ? "Create or refresh the local preview" : readiness.setupReady ? "Select an episode first" : "Clear the Render Readiness setup checks first"}
+            title={canBuildPreview ? "Create or refresh the local preview" : readiness.setupReady ? "Select an episode first" : "Clear the storyboard readiness checks first"}
           >
             <Play size={17} />
             Build Preview

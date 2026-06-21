@@ -3250,8 +3250,6 @@ function createDrafts({ episode, show, plan, scriptText }) {
 }
 
 async function createPipelineJob({ episode, show }) {
-  const blockedGate = preRenderBlockedGate(episode.approvals);
-  const canContinue = !blockedGate || blockedGate.status === "auto";
   const steps = [
     { id: "parse", label: "Parse script", enabled: show.automation.parseScript },
     { id: "voice", label: "Generate audio", enabled: show.automation.generateVoices },
@@ -3262,7 +3260,7 @@ async function createPipelineJob({ episode, show }) {
     { id: "marketing", label: "Prepare YouTube promotion packet", enabled: show.automation.draftSocialCampaign }
   ];
   const reportId = randomUUID();
-  let report = await writeLocalBuildReport({ reportId, episode, show, blockedGate });
+  let report = await writeLocalBuildReport({ reportId, episode, show });
   const outputs = [{
     id: reportId,
     type: "build_report",
@@ -3270,23 +3268,6 @@ async function createPipelineJob({ episode, show }) {
     localUrl: report.localUrl,
     createdAt: report.createdAt
   }];
-
-  if (!canContinue && blockedGate) {
-    return {
-      report,
-      outputs,
-      job: {
-      id: randomUUID(),
-      episodeId: episode.id,
-      showId: show.id,
-      status: "waiting_for_approval",
-      currentStage: blockedGate.stage,
-      createdAt: new Date().toISOString(),
-      summary: `Local test complete. Waiting for ${blockedGate.title} approval. No publishing was attempted.`,
-      steps: steps.map((step) => ({ ...step, status: step.enabled ? "waiting" : "manual" }))
-      }
-    };
-  }
 
   let preview = null;
   let productionMap = null;
@@ -3329,7 +3310,7 @@ async function createPipelineJob({ episode, show }) {
   };
 }
 
-async function writeLocalBuildReport({ reportId, episode, show, blockedGate }) {
+async function writeLocalBuildReport({ reportId, episode, show }) {
   const createdAt = new Date().toISOString();
   const reportDir = path.join(outputsDir, "build-reports");
   await mkdir(reportDir, { recursive: true });
@@ -3345,13 +3326,6 @@ async function writeLocalBuildReport({ reportId, episode, show, blockedGate }) {
   const characters = Array.isArray(show.characters) ? show.characters : [];
   const format = normalizeShortFormat(show?.shortFormat || episode.format);
   const voiceCount = characters.filter((character) => String(character.voiceId || "").trim()).length;
-  const approvals = Array.isArray(episode.approvals) ? episode.approvals : [];
-  const pendingPreRenderApprovals = approvals.filter(
-    (gate) => isPreRenderApproval(gate.id) && (gate.status === "pending" || gate.status === "blocked")
-  );
-  const pendingPublishApprovals = approvals.filter((gate) => gate.status === "pending" || gate.status === "blocked");
-  const renderApproval = approvals.find((gate) => gate.id === "render_preview");
-  const renderApproved = !renderApproval || renderApproval.status === "approved" || renderApproval.status === "auto";
   const productionMap = applyStoredSpeakerMasks(normalizeProductionMapForFormat(episode.productionMap, format), assets);
   const dialogueProductionLines = productionMap.filter((line) => line.lineType !== "insert");
   const voicedLines = dialogueProductionLines.filter((line) => line.voiceId).length;
@@ -3425,19 +3399,6 @@ async function writeLocalBuildReport({ reportId, episode, show, blockedGate }) {
       "warning"
     ),
     buildCheck(
-      "approvals",
-      "Pre-render approval gates are clear",
-      pendingPreRenderApprovals.length === 0,
-      pendingPreRenderApprovals.length ? `${pendingPreRenderApprovals.length} pre-render approvals still need attention` : "Ready to render locally"
-    ),
-    buildCheck(
-      "render_review",
-      "Episode Render approval records preview review",
-      renderApproved,
-      renderApproved ? "Preview review approval is complete." : "Approve Episode Render after watching the local preview.",
-      "warning"
-    ),
-    buildCheck(
       "youtube_publish_lock",
       "YouTube upload is locked for local testing",
       true,
@@ -3500,25 +3461,15 @@ async function writeLocalBuildReport({ reportId, episode, show, blockedGate }) {
       missingMaskLines: maskIssues.length
     },
     approvals: {
-      blockedGate: blockedGate?.title || "",
-      pending: pendingPreRenderApprovals.map((gate) => ({ id: gate.id, title: gate.title, status: gate.status })),
-      pendingPublish: pendingPublishApprovals.map((gate) => ({ id: gate.id, title: gate.title, status: gate.status }))
+      blockedGate: "",
+      pending: [],
+      pendingPublish: []
     },
     checks
   };
 
   await writeFile(path.join(reportDir, fileName), JSON.stringify(report, null, 2));
   return report;
-}
-
-function isPreRenderApproval(id) {
-  return ["script_plan", "voice_audio"].includes(id);
-}
-
-function preRenderBlockedGate(approvals = []) {
-  return (Array.isArray(approvals) ? approvals : []).find(
-    (gate) => isPreRenderApproval(gate.id) && (gate.status === "pending" || gate.status === "blocked")
-  );
 }
 
 async function createLocalPreview({ previewId, episode, show, reuseOnly = false, renderVideo = true }) {
@@ -4791,12 +4742,6 @@ async function buildLaunchReadiness({ episode, show }) {
   const dialogueLines = lines.filter((line) => line.lineType !== "insert");
   const insertLines = lines.filter((line) => line.lineType === "insert");
   const groupedDialogue = dialogueLines.filter((line) => ["wide_shot", "medium_two_shot"].includes(line.shotRole));
-  const approvals = Array.isArray(episode.approvals) ? episode.approvals : [];
-  const requiredApprovalIds = ["script_plan", "voice_audio", "render_preview"];
-  const missingApprovals = requiredApprovalIds.filter((id) => {
-    const gate = approvals.find((item) => item.id === id);
-    return !gate || (gate.status !== "approved" && gate.status !== "auto");
-  });
   const missingVoices = dialogueLines.filter((line) => !String(line.voiceId || "").trim());
   const missingImages = lines.filter((line) => !String(line.assetId || "").trim());
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
@@ -4847,13 +4792,6 @@ async function buildLaunchReadiness({ episode, show }) {
     "Production map",
     lines.length > 0,
     lines.length ? `${lines.length} mapped shots` : "Build Plan must create the shot map"
-  );
-  add(
-    "episode",
-    "approvals",
-    "Mandatory approvals",
-    missingApprovals.length === 0,
-    missingApprovals.length ? `${missingApprovals.length} gate(s) still need approval` : "Script Plan, Voice & Audio, and Episode Render are approved"
   );
   add(
     "episode",
