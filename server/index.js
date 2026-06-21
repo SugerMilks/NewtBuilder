@@ -408,7 +408,7 @@ app.post("/api/episodes", async (req, res) => {
     drafts: inheritedDrafts,
     outputs: [],
     jobLog: inheritedAssets.length
-      ? [`Inherited ${inheritedAssets.length} reusable asset${inheritedAssets.length === 1 ? "" : "s"} from ${templateEpisode?.title || "previous episode"}.`]
+      ? appendLog([], `Inherited ${inheritedAssets.length} reusable asset${inheritedAssets.length === 1 ? "" : "s"} from ${templateEpisode?.title || "previous episode"}.`)
       : []
   });
 
