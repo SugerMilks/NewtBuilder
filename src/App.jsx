@@ -582,24 +582,6 @@ function Toggle({ checked, onChange, label, icon: Icon, disabled = false, locked
   );
 }
 
-function SegmentedControl({ value, options, onChange, disabled = false }) {
-  return (
-    <div className="segmentedControl">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          className={value === option.value ? "active" : ""}
-          onClick={() => onChange(option.value)}
-          disabled={disabled}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function Field({ label, children }) {
   return (
     <label className="field">
@@ -1192,6 +1174,13 @@ export default function App() {
         body: JSON.stringify({
           name: `Show ${shows.length + 1}`,
           description: "",
+          shortFormat: {
+            aspectRatio: "16:9",
+            resolutionMode: "high",
+            resolution: resolutionForFormat("16:9", "high"),
+            wordsPerMinute: 145,
+            fps: 30
+          },
           creative: {
             audience: "episode viewers",
             visualStyle: "cinematic animated episodes",
@@ -2935,16 +2924,24 @@ export default function App() {
                       </div>
                     </div>
                     <Field label="Aspect">
-                      <SegmentedControl
-                        value={showDraft.shortFormat.aspectRatio}
-                        options={[
-                          { value: "9:16", label: "9:16 Vertical" },
-                          { value: "16:9", label: "16:9 Wide" }
-                        ]}
-                        onChange={setShowAspect}
-                      />
+                      <select value={showDraft.shortFormat?.aspectRatio || "16:9"} onChange={(event) => setShowAspect(event.target.value)}>
+                        {formatOptions.map((option) => (
+                          <option key={option.aspectRatio} value={option.aspectRatio}>
+                            {option.label} {option.detail}
+                          </option>
+                        ))}
+                      </select>
                     </Field>
                     <div className="twoColumn">
+                      <Field label="Resolution mode">
+                        <select
+                          value={normalizeResolutionMode(showDraft.shortFormat?.resolutionMode)}
+                          onChange={(event) => setShowResolutionMode(event.target.value)}
+                        >
+                          <option value="high">High Definition (1080p)</option>
+                          <option value="standard">Standard (720p)</option>
+                        </select>
+                      </Field>
                       <Field label="Resolution">
                         <input value={showDraft.shortFormat.resolution} readOnly />
                       </Field>

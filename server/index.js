@@ -116,8 +116,8 @@ const campaignPlatformLimits = {
 };
 
 const shortFormatDefaults = {
-  aspectRatio: "9:16",
-  resolution: "1080x1920",
+  aspectRatio: "16:9",
+  resolution: "1920x1080",
   resolutionMode: "high",
   wordsPerMinute: 145,
   fps: 30,
@@ -7916,7 +7916,7 @@ function findPdfPython() {
 }
 
 function normalizeShortFormat(format = {}) {
-  const aspectRatio = ["9:16", "16:9", "21:9"].includes(format.aspectRatio) ? format.aspectRatio : "9:16";
+  const aspectRatio = ["9:16", "16:9", "21:9"].includes(format.aspectRatio) ? format.aspectRatio : "16:9";
   const resolutionMode = format.resolutionMode === "standard" ? "standard" : "high";
   const defaultResolution = {
     "9:16": resolutionMode === "standard" ? "720x1280" : "1080x1920",

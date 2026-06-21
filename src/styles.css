@@ -2141,31 +2141,6 @@ label:has(textarea:disabled) {
   white-space: normal;
 }
 
-.segmentedControl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #171713;
-}
-
-.segmentedControl button {
-  min-height: 34px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.segmentedControl button.active {
-  background: #253128;
-  border-color: rgba(109, 208, 165, 0.38);
-  color: var(--text);
-}
-
 .helperText {
   color: var(--muted);
   line-height: 1.45;
