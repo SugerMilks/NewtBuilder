@@ -403,29 +403,6 @@ function reindexProductionMap(lines = []) {
   }));
 }
 
-function productionMapGroupBlocks(lines = []) {
-  const blocks = [];
-  for (const line of Array.isArray(lines) ? lines : []) {
-    if (!line.groupId) {
-      blocks.push({ type: "line", line, blockId: line.id });
-      continue;
-    }
-    const previous = blocks.at(-1);
-    if (previous?.type === "group" && previous.groupId === line.groupId) {
-      previous.lines.push(line);
-      continue;
-    }
-    blocks.push({
-      type: "group",
-      blockId: `${line.groupId}-${line.id}`,
-      groupId: line.groupId,
-      groupTitle: line.groupTitle || "Group",
-      lines: [line]
-    });
-  }
-  return blocks;
-}
-
 function buildRenderReadiness({
   productionMap = [],
   assets = [],
@@ -6087,8 +6064,6 @@ function ProductionMapPanel({
   const [dragLineId, setDragLineId] = useState("");
   const [dropTarget, setDropTarget] = useState(null);
   const [editingLineId, setEditingLineId] = useState("");
-  const [collapsedGroupIds, setCollapsedGroupIds] = useState(() => new Set());
-  const groupBlocks = useMemo(() => productionMapGroupBlocks(productionMap), [productionMap]);
   const selectedIds = useMemo(() => [...selectedLineIds], [selectedLineIds]);
   const selectedLines = useMemo(
     () => productionMap.filter((line) => selectedLineIds.has(line.id)),
@@ -6105,14 +6080,6 @@ function ProductionMapPanel({
       return next.size === current.size ? current : next;
     });
   }, [productionMap]);
-
-  useEffect(() => {
-    setCollapsedGroupIds((current) => {
-      const available = new Set(groupBlocks.filter((block) => block.type === "group").map((block) => block.groupId));
-      const next = new Set([...current].filter((groupId) => available.has(groupId)));
-      return next.size === current.size ? current : next;
-    });
-  }, [groupBlocks]);
 
   useEffect(() => {
     if (!editingLineId) return undefined;
@@ -6218,15 +6185,6 @@ function ProductionMapPanel({
     setDropTarget(null);
   }
 
-  function toggleGroup(groupId) {
-    setCollapsedGroupIds((current) => {
-      const next = new Set(current);
-      if (next.has(groupId)) next.delete(groupId);
-      else next.add(groupId);
-      return next;
-    });
-  }
-
   function reviewStatusForLine(line) {
     return line.lineType === "insert"
       ? line.videoStatus || (line.videoTake?.localUrl ? "generated" : "pending")
@@ -6287,51 +6245,22 @@ function ProductionMapPanel({
 
   return (
     <section className="workPanel productionMapPanel storyboardCanvasPanel">
-      <div className="panelHeader storyboardPanelHeader">
-        <div>
-          <span className="eyebrow">Storyboard</span>
-          <h3>Frames</h3>
-        </div>
-        <div className="buttonRow">
-          {selectedLineIds.size >= 2 ? (
-            <button className="secondaryButton" type="button" onClick={() => onGroupLines(selectedIds)}>
-              <Plus size={15} />
-              Group selected
-            </button>
-          ) : null}
-          {selectedGroupedLines.length ? (
-            <button className="quietButton" type="button" onClick={() => onUngroupLines(selectedIds)}>
-              Ungroup
-            </button>
-          ) : null}
-          {selectedLineIds.size ? <Pill tone="good">{selectedLineIds.size} selected</Pill> : null}
-          <Pill tone={groupBlocks.some((block) => block.type === "group") ? "good" : "neutral"}>
-            {groupBlocks.filter((block) => block.type === "group").length} groups
-          </Pill>
-          <Pill tone={hasLines ? "good" : "neutral"}>{productionMap.length} lines</Pill>
-        </div>
-      </div>
-
       {hasLines ? (
         <>
-          {groupBlocks.some((block) => block.type === "group") ? (
-            <div className="storyboardGroupStrip">
-              {groupBlocks.filter((block) => block.type === "group").map((block) => {
-                const groupCollapsed = collapsedGroupIds.has(block.groupId);
-                return (
-                  <button
-                    type="button"
-                    key={block.blockId}
-                    className={`storyboardGroupChip ${groupCollapsed ? "collapsed" : ""}`}
-                    onClick={() => toggleGroup(block.groupId)}
-                    aria-expanded={!groupCollapsed}
-                  >
-                    <ChevronRight size={14} className={groupCollapsed ? "" : "open"} />
-                    <span>{block.groupTitle}</span>
-                    <Pill tone="neutral">{block.lines.length}</Pill>
-                  </button>
-                );
-              })}
+          {selectedLineIds.size ? (
+            <div className="storyboardSelectionToolbar" aria-label="Selected storyboard actions">
+              <Pill tone="good">{selectedLineIds.size} selected</Pill>
+              {selectedLineIds.size >= 2 ? (
+                <button className="secondaryButton" type="button" onClick={() => onGroupLines(selectedIds)}>
+                  <Plus size={15} />
+                  Group
+                </button>
+              ) : null}
+              {selectedGroupedLines.length ? (
+                <button className="quietButton" type="button" onClick={() => onUngroupLines(selectedIds)}>
+                  Ungroup
+                </button>
+              ) : null}
             </div>
           ) : null}
           <div className="productionStoryboardGrid">

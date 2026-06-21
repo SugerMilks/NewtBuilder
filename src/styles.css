@@ -961,10 +961,10 @@ main {
 /* Storyboard canvas */
 .storyboardCanvasPanel {
   display: grid;
-  gap: 14px;
+  gap: 8px;
   overflow: hidden;
   border-radius: 28px;
-  padding: 14px;
+  padding: 10px;
   background:
     radial-gradient(circle at 12% 20%, rgba(216, 198, 255, 0.13), transparent 32%),
     radial-gradient(circle at 88% 76%, rgba(109, 208, 165, 0.10), transparent 34%),
@@ -974,8 +974,22 @@ main {
   background-size: auto, auto, 54px 54px, 54px 54px, auto;
 }
 
-.storyboardPanelHeader {
-  padding: 4px 4px 0;
+.storyboardSelectionToolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  margin: 0 0 2px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(12, 12, 13, 0.74);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(18px) saturate(132%);
 }
 
 .productionStoryboardGrid {
@@ -1106,28 +1120,6 @@ main {
 
 .storyboardAddMenu button:hover {
   background: rgba(255, 255, 255, 0.09);
-}
-
-.storyboardGroupStrip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.storyboardGroupChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  padding: 8px 10px;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.055);
-}
-
-.storyboardGroupChip .open {
-  transform: rotate(90deg);
 }
 
 .storyboardEditorBackdrop {
