@@ -221,6 +221,8 @@ const workflowSections = [
   { key: "delivery", label: "Delivery", icon: MonitorUp }
 ];
 
+const assetNodeKeys = ["character", "visual", "insert"];
+
 const formatOptions = [
   {
     aspectRatio: "16:9",
@@ -878,8 +880,17 @@ function WorkflowCanvas({ section, children, meta = null }) {
   );
 }
 
-function AssetNodeCanvas({ children, onAddCharacter, onFocusNode }) {
+function normalizeAssetNodeConnections(value = {}) {
+  return assetNodeKeys.reduce((connections, key) => {
+    connections[key] = Boolean(value?.[key]);
+    return connections;
+  }, {});
+}
+
+function AssetNodeCanvas({ children, connections = {}, onAddCharacter, onFocusNode }) {
   const [menu, setMenu] = useState(null);
+  const normalizedConnections = normalizeAssetNodeConnections(connections);
+  const connectedCount = assetNodeKeys.filter((key) => normalizedConnections[key]).length;
 
   function openMenu(event) {
     event.preventDefault();
@@ -893,16 +904,17 @@ function AssetNodeCanvas({ children, onAddCharacter, onFocusNode }) {
   return (
     <div className="assetNodeCanvas" onContextMenu={openMenu} onClick={() => setMenu(null)}>
       <div className="assetNodeConnectors" aria-hidden="true">
-        <span />
-        <span />
-        <span />
+        <span className={normalizedConnections.character ? "connected" : ""} />
+        <span className={normalizedConnections.visual ? "connected" : ""} />
+        <span className={normalizedConnections.insert ? "connected" : ""} />
       </div>
       <div className="assetNodeBoard">
         {children}
       </div>
-      <article className="assetInputNode">
+      <article className={`assetInputNode ${connectedCount >= 2 ? "ready" : ""}`}>
         <span className="nodePort input" />
         <strong>INPUT</strong>
+        <small>{connectedCount}/3 linked</small>
       </article>
       {menu ? (
         <div className="assetContextMenu" style={{ left: menu.x, top: menu.y }} onClick={(event) => event.stopPropagation()}>
@@ -1989,6 +2001,23 @@ export default function App() {
     }
   }
 
+  function toggleAssetNodeConnection(nodeKey) {
+    if (!assetNodeKeys.includes(nodeKey)) return;
+    setEpisodeDraft((prev) => {
+      const source = prev || activeEpisode;
+      if (!source) return prev;
+      const next = structuredClone(source);
+      const connections = normalizeAssetNodeConnections(next.drafts?.assetNodeConnections);
+      connections[nodeKey] = !connections[nodeKey];
+      next.drafts = {
+        ...(next.drafts || {}),
+        assetNodeConnections: connections
+      };
+      next.updatedAt = new Date().toISOString();
+      return next;
+    });
+  }
+
   function updateProductionLine(lineId, patch) {
     setEpisodeDraft((prev) => {
       if (!prev) return prev;
@@ -2254,6 +2283,8 @@ export default function App() {
     preRenderGates.length === preRenderApprovalIds.size &&
     preRenderGates.every((gate) => gate.status === "approved" || gate.status === "auto");
   const drafts = episodeDraft?.id === activeEpisode?.id ? episodeDraft?.drafts || {} : activeEpisode?.drafts || {};
+  const assetNodeConnections = normalizeAssetNodeConnections(drafts.assetNodeConnections);
+  const coreAssetNodesConnected = Boolean(assetNodeConnections.character && assetNodeConnections.visual);
   const activeAutomation = showDraft?.automation || {};
   const socialConfig = showDraft?.platforms?.social || activeShow?.platforms?.social || {};
   const promotionTemplates = normalizePromotionTemplates(socialConfig.templates);
@@ -2338,7 +2369,8 @@ export default function App() {
   const assetsComplete = Boolean(
     setupComplete &&
       (showDraft?.characters || activeShow?.characters || []).length &&
-      visualAssets.length
+      visualAssets.length &&
+      coreAssetNodesConnected
   );
   const scriptUploaded = Boolean((episodeDraft?.scriptText || activeEpisode?.scriptText || "").trim());
   const planBuilt = Boolean(productionMap.length);
@@ -2613,6 +2645,9 @@ export default function App() {
                     <Pill tone={(activeEpisode?.assets || []).some((asset) => asset.type === "image") ? "good" : "neutral"}>
                       {(activeEpisode?.assets || []).filter((asset) => asset.type === "image").length} images
                     </Pill>
+                    <Pill tone={coreAssetNodesConnected ? "good" : "warn"}>
+                      {coreAssetNodesConnected ? "INPUT linked" : "Link nodes"}
+                    </Pill>
                     <button className="secondaryButton" onClick={addCharacter}>
                       <Plus size={16} />
                       Character
@@ -2621,11 +2656,18 @@ export default function App() {
                 }
               >
                 <AssetNodeCanvas
+                  connections={assetNodeConnections}
                   onAddCharacter={addCharacter}
                   onFocusNode={(nodeId) => document.getElementById(nodeId)?.scrollIntoView({ behavior: "smooth", block: "center" })}
                 >
                   <article className="assetNode characterNode" id="character-node">
-                    <span className="nodePort output" />
+                    <button
+                      type="button"
+                      className={`nodePort output connectable ${assetNodeConnections.character ? "connected" : ""}`}
+                      onClick={() => toggleAssetNodeConnection("character")}
+                      aria-label={assetNodeConnections.character ? "Disconnect Character node from input" : "Connect Character node to input"}
+                      title={assetNodeConnections.character ? "Connected to INPUT" : "Connect to INPUT"}
+                    />
                     <div className="nodeHeader">
                       <span className="eyebrow">Character Node</span>
                       <strong>Cast</strong>
@@ -2699,7 +2741,13 @@ export default function App() {
                     </div>
                   </article>
                   <article className="assetNode visualFrameNode" id="visual-frame-node">
-                    <span className="nodePort output" />
+                    <button
+                      type="button"
+                      className={`nodePort output connectable ${assetNodeConnections.visual ? "connected" : ""}`}
+                      onClick={() => toggleAssetNodeConnection("visual")}
+                      aria-label={assetNodeConnections.visual ? "Disconnect Visual Frame node from input" : "Connect Visual Frame node to input"}
+                      title={assetNodeConnections.visual ? "Connected to INPUT" : "Connect to INPUT"}
+                    />
                     <div className="nodeHeader">
                       <span className="eyebrow">Visual Frame Node</span>
                       <strong>Frame Images</strong>
@@ -2714,7 +2762,13 @@ export default function App() {
                     />
                   </article>
                   <article className="assetNode insertFrameNode" id="insert-frame-node">
-                    <span className="nodePort output" />
+                    <button
+                      type="button"
+                      className={`nodePort output connectable ${assetNodeConnections.insert ? "connected" : ""}`}
+                      onClick={() => toggleAssetNodeConnection("insert")}
+                      aria-label={assetNodeConnections.insert ? "Disconnect Insert Frame node from input" : "Connect Insert Frame node to input"}
+                      title={assetNodeConnections.insert ? "Connected to INPUT" : "Optional: connect inserts to INPUT"}
+                    />
                     <div className="nodeHeader">
                       <span className="eyebrow">Insert Frame Node</span>
                       <strong>Insert Images</strong>

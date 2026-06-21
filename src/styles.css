@@ -614,11 +614,25 @@ main {
   position: absolute;
   width: 13px;
   height: 13px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
   background: #f7f2e7;
   box-shadow:
     0 0 0 6px rgba(255, 255, 255, 0.08),
     0 0 26px rgba(216, 198, 255, 0.36);
+}
+
+.nodePort.connectable {
+  cursor: pointer;
+}
+
+.nodePort.connectable:hover,
+.nodePort.connectable.connected {
+  background: #6dd0a5;
+  box-shadow:
+    0 0 0 7px rgba(109, 208, 165, 0.16),
+    0 0 32px rgba(109, 208, 165, 0.58);
 }
 
 .nodePort.output {
@@ -650,6 +664,19 @@ main {
     0 22px 52px rgba(0, 0, 0, 0.32);
 }
 
+.assetInputNode.ready {
+  color: #041d14;
+  background: linear-gradient(150deg, rgba(231, 255, 244, 0.96), rgba(161, 238, 202, 0.88));
+}
+
+.assetInputNode small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.72;
+}
+
 .assetNodeConnectors {
   position: absolute;
   inset: 0;
@@ -664,6 +691,12 @@ main {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.30), rgba(216, 198, 255, 0.42));
   transform-origin: right center;
+}
+
+.assetNodeConnectors span.connected {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(109, 208, 165, 0.72), rgba(247, 242, 231, 0.82));
+  box-shadow: 0 0 22px rgba(109, 208, 165, 0.36);
 }
 
 .assetNodeConnectors span:nth-child(1) {

@@ -2036,7 +2036,8 @@ function normalizeEpisode(episode) {
   const drafts = {
     ...emptyDrafts(defaultShow()),
     ...(episode.drafts || {}),
-    finishingLayers: normalizeFinishingLayers(episode.drafts?.finishingLayers)
+    finishingLayers: normalizeFinishingLayers(episode.drafts?.finishingLayers),
+    assetNodeConnections: normalizeAssetNodeConnections(episode.drafts?.assetNodeConnections)
   };
   return {
     id: cleanId(episode.id) || randomUUID(),
@@ -2139,6 +2140,14 @@ function emptyPlan() {
   };
 }
 
+function normalizeAssetNodeConnections(value = {}) {
+  return {
+    character: Boolean(value?.character),
+    visual: Boolean(value?.visual),
+    insert: Boolean(value?.insert)
+  };
+}
+
 function emptyDrafts(show) {
   return {
     youtube: {
@@ -2169,7 +2178,12 @@ function emptyDrafts(show) {
     },
     thumbnails: [],
     finishingLayers: [],
-    social: []
+    social: [],
+    assetNodeConnections: {
+      character: false,
+      visual: false,
+      insert: false
+    }
   };
 }
 
@@ -2225,6 +2239,7 @@ function inheritedEpisodeDrafts({ templateEpisode, show }) {
   const delivery = template.delivery || {};
   return {
     ...base,
+    assetNodeConnections: normalizeAssetNodeConnections(template.assetNodeConnections),
     youtube: {
       ...base.youtube,
       tags: Array.isArray(youtube.tags) && youtube.tags.length ? youtube.tags : base.youtube.tags,
